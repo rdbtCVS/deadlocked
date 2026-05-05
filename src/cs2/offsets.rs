@@ -167,6 +167,15 @@ pub struct EntityIdentityOffsets {
     pub size: i32,
 }
 
+#[derive(Debug, Clone)]
+pub struct VoteControllerOffsets {
+    pub active_issue: u64,
+    /// First element of `m_nVoteOptionCount`
+    pub vote_option_count: u64,
+    pub potential_votes: u64,
+    pub is_yes_no: u64,
+}
+
 #[derive(Debug, Default)]
 pub struct Offsets {
     pub library: LibraryOffsets,
@@ -191,4 +200,5 @@ pub struct Offsets {
     pub econ_item_view: EconItemViewOffsets,
     pub planted_c4: PlantedC4Offsets,
     pub entity_identity: EntityIdentityOffsets,
+    pub vote: Option<VoteControllerOffsets>,
 }

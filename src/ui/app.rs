@@ -56,6 +56,11 @@ pub struct App {
     pub current_tab: Tab,
     pub aimbot_tab: AimbotTab,
     pub aimbot_weapon: Weapon,
+
+    pub hit_marker_until: Option<std::time::Instant>,
+    pub last_hit_damage: f32,
+    pub(super) _audio_stream: Option<rodio::OutputStream>,
+    pub(super) hit_sink: Option<rodio::Sink>,
 }
 
 impl App {
@@ -67,6 +72,14 @@ impl App {
         let grenades = read_grenades();
 
         let app_config = read_app_config();
+
+        let (_audio_stream, hit_sink) = match rodio::OutputStreamBuilder::open_default_stream() {
+            Ok(stream) => {
+                let sink = rodio::Sink::connect_new(stream.mixer());
+                (Some(stream), Some(sink))
+            }
+            Err(_) => (None, None),
+        };
 
         // was selected to be no,
         if !app_config.first_launch && !app_config.send_stacktraces {
@@ -101,6 +114,11 @@ impl App {
             current_tab: Tab::Aimbot,
             aimbot_tab: AimbotTab::Global,
             aimbot_weapon: Weapon::Ak47,
+
+            hit_marker_until: None,
+            last_hit_damage: 0.0,
+            _audio_stream,
+            hit_sink,
         };
         ret.send_config();
         ret

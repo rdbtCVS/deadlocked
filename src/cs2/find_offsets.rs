@@ -2,7 +2,11 @@ use std::time::Instant;
 
 use crate::{
     constants::cs2,
-    cs2::{CS2, offsets::Offsets, schema::Schema},
+    cs2::{
+        CS2,
+        offsets::{Offsets, VoteControllerOffsets},
+        schema::Schema,
+    },
 };
 
 impl CS2 {
@@ -228,6 +232,26 @@ impl CS2 {
         offsets.planted_c4.is_defused = client.get("C_PlantedC4", "m_bBombDefused")?;
         offsets.planted_c4.has_exploded = client.get("C_PlantedC4", "m_bHasExploded")?;
         offsets.planted_c4.defuse_time_left = client.get("C_PlantedC4", "m_flDefuseCountDown")?;
+
+        offsets.vote = match (
+            client.get("C_VoteController", "m_iActiveIssueIndex"),
+            client.get("C_VoteController", "m_nVoteOptionCount"),
+            client.get("C_VoteController", "m_nPotentialVotes"),
+            client.get("C_VoteController", "m_bIsYesNoVote"),
+        ) {
+            (Some(active_issue), Some(vote_option_count), Some(potential_votes), Some(is_yes_no)) => {
+                Some(VoteControllerOffsets {
+                    active_issue,
+                    vote_option_count,
+                    potential_votes,
+                    is_yes_no,
+                })
+            }
+            _ => {
+                utils::debug!("C_VoteController schema not available; vote HUD disabled");
+                None
+            }
+        };
 
         offsets.entity_identity.size = client.get_class("CEntityIdentity")?.size();
 

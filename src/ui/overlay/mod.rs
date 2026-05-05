@@ -8,6 +8,8 @@ use crate::{
     math::world_to_screen,
     ui::{app::App, grenades::Grenade},
 };
+use rodio::Source;
+use std::time::{Duration, Instant};
 
 mod entity;
 mod hud;
@@ -29,64 +31,73 @@ impl App {
 
         self.update_trails();
         self.update_player_sounds();
-        let data = &self.data.lock();
+        self.update_hit_feedback();
 
-        self.update_window(data);
-        self.overlay_debug(&painter, data);
+        let hit_ctx = {
+            let data = &self.data.lock();
 
-        for player in &data.players {
-            if data.esp_active {
-                self.draw_player(&painter, player, data);
-            }
-        }
+            self.update_window(data);
+            self.overlay_debug(&painter, data);
 
-        if self.config.player.show_friendlies {
-            for player in &data.friendlies {
+            for player in &data.players {
                 if data.esp_active {
                     self.draw_player(&painter, player, data);
                 }
             }
-        }
 
-        if self.config.hud.dropped_weapons || self.config.hud.grenade_trails {
-            for entity in &data.entities {
-                self.draw_entity(&painter, entity, data);
+            if self.config.player.show_friendlies {
+                for player in &data.friendlies {
+                    if data.esp_active {
+                        self.draw_player(&painter, player, data);
+                    }
+                }
             }
-        }
 
-        self.draw_bomb_timer(&painter, data);
-        self.draw_fov_circle(&painter, data);
-        self.draw_sniper_crosshair(&painter, data);
-        self.draw_keybind_list(&painter, data);
-        self.draw_spectator_list(&painter, data);
+            if self.config.hud.dropped_weapons || self.config.hud.grenade_trails {
+                for entity in &data.entities {
+                    self.draw_entity(&painter, entity, data);
+                }
+            }
 
-        if data.aimbot_active {
-            self.text(
-                &painter,
-                "aimbot active",
-                pos2(
-                    data.window_size.x / 2.0 + 8.0,
-                    data.window_size.y / 2.0 + 8.0,
-                ),
-                Align2::LEFT_TOP,
-                None,
-            );
-        }
+            self.draw_bomb_timer(&painter, data);
+            self.draw_fov_circle(&painter, data);
+            self.draw_sniper_crosshair(&painter, data);
+            self.draw_keybind_list(&painter, data);
+            self.draw_spectator_list(&painter, data);
+            self.draw_vote_hud(&painter, data);
 
-        if data.triggerbot_active {
-            self.text(
-                &painter,
-                "trigger active",
-                pos2(
-                    data.window_size.x / 2.0 + 8.0,
-                    data.window_size.y / 2.0 + 8.0 + self.config.hud.font_size,
-                ),
-                Align2::LEFT_TOP,
-                None,
-            );
-        }
+            if data.aimbot_active {
+                self.text(
+                    &painter,
+                    "aimbot active",
+                    pos2(
+                        data.window_size.x / 2.0 + 8.0,
+                        data.window_size.y / 2.0 + 8.0,
+                    ),
+                    Align2::LEFT_TOP,
+                    None,
+                );
+            }
 
-        self.grenade_manager(data, &painter);
+            if data.triggerbot_active {
+                self.text(
+                    &painter,
+                    "trigger active",
+                    pos2(
+                        data.window_size.x / 2.0 + 8.0,
+                        data.window_size.y / 2.0 + 8.0 + self.config.hud.font_size,
+                    ),
+                    Align2::LEFT_TOP,
+                    None,
+                );
+            }
+
+            self.grenade_manager(data, &painter);
+
+            (data.window_size, data.in_game)
+        };
+
+        self.draw_hit_marker(&painter, hit_ctx.0, hit_ctx.1);
     }
 
     fn update_window(&self, data: &Data) {
@@ -341,6 +352,24 @@ impl App {
             }
         } else {
             painter.text(position, align, text.as_ref(), font, color);
+        }
+    }
+
+    fn update_hit_feedback(&mut self) {
+        let data = self.data.lock();
+        let hit_pulse = data.hit_pulse;
+        if hit_pulse {
+            self.last_hit_damage = data.hit_damage_delta;
+            self.hit_marker_until = Some(Instant::now() + Duration::from_millis(420));
+            if self.config.hud.hit_sound {
+                if let Some(sink) = self.hit_sink.as_mut() {
+                    sink.stop();
+                    let wave = rodio::source::SineWave::new(920.0)
+                        .take_duration(Duration::from_millis(45))
+                        .amplify(0.09);
+                    sink.append(wave);
+                }
+            }
         }
     }
 }

@@ -1,7 +1,12 @@
+use std::time::Instant;
+
 use egui::{Align2, Color32, Painter, Stroke, pos2};
 
 use crate::{
-    config::KeyMode, cs2::entity::weapon_class::WeaponClass, data::Data, math::world_to_screen,
+    config::KeyMode,
+    cs2::entity::weapon_class::WeaponClass,
+    data::Data,
+    math::world_to_screen,
     ui::app::App,
 };
 
@@ -239,5 +244,105 @@ impl App {
             ],
             stroke,
         );
+    }
+
+    pub fn draw_vote_hud(&self, painter: &Painter, data: &Data) {
+        if !self.config.hud.vote_hud || !data.in_game {
+            return;
+        }
+        let v = &data.vote;
+        if !v.active {
+            return;
+        }
+        let x = data.window_size.x * 0.5;
+        let y = 10.0;
+        let fs = self.config.hud.font_size * 1.05;
+        let line = if v.is_yes_no {
+            format!(
+                "Vote  YES {}  ·  NO {}  ·  {}/{}",
+                v.options[0],
+                v.options[1],
+                v.options[0] + v.options[1],
+                v.potential_votes.max(1),
+            )
+        } else {
+            format!(
+                "Vote  {:?}  potential {}",
+                v.options, v.potential_votes
+            )
+        };
+        self.text_sized(
+            painter,
+            line,
+            pos2(x, y),
+            Align2::CENTER_TOP,
+            Some(Color32::YELLOW),
+            fs,
+        );
+    }
+
+    pub fn draw_hit_marker(
+        &mut self,
+        painter: &Painter,
+        window_size: glam::Vec2,
+        in_game: bool,
+    ) {
+        if !self.config.hud.hit_marker || !in_game {
+            return;
+        }
+        let Some(until) = self.hit_marker_until else {
+            return;
+        };
+        let now = Instant::now();
+        let Some(remaining) = until.checked_duration_since(now) else {
+            self.hit_marker_until = None;
+            return;
+        };
+        let fade = (remaining.as_secs_f32() / 0.42).clamp(0.0, 1.0);
+        let a = (fade * 255.0) as u8;
+        let center = window_size / 2.0;
+        let len = 18.0 * fade.max(0.2);
+        let gap = 5.0;
+        let col = Color32::from_rgba_unmultiplied(255, 220, 120, a);
+        let stroke = Stroke::new(self.config.hud.line_width * 1.5, col);
+        painter.line_segment(
+            [
+                pos2(center.x + gap, center.y),
+                pos2(center.x + gap + len, center.y),
+            ],
+            stroke,
+        );
+        painter.line_segment(
+            [
+                pos2(center.x - gap, center.y),
+                pos2(center.x - gap - len, center.y),
+            ],
+            stroke,
+        );
+        painter.line_segment(
+            [
+                pos2(center.x, center.y + gap),
+                pos2(center.x, center.y + gap + len),
+            ],
+            stroke,
+        );
+        painter.line_segment(
+            [
+                pos2(center.x, center.y - gap),
+                pos2(center.x, center.y - gap - len),
+            ],
+            stroke,
+        );
+
+        if self.last_hit_damage >= 1.0 && fade > 0.15 {
+            self.text_sized(
+                painter,
+                format!("-{:.0}", self.last_hit_damage),
+                pos2(center.x, center.y - gap - len - self.config.hud.font_size * 1.2),
+                Align2::CENTER_BOTTOM,
+                Some(Color32::from_rgba_unmultiplied(255, 200, 80, a)),
+                self.config.hud.font_size * 1.15,
+            );
+        }
     }
 }

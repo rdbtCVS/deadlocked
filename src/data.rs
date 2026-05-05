@@ -34,6 +34,10 @@ pub struct Data {
     pub aimbot_active: bool,
     pub triggerbot_active: bool,
     pub esp_active: bool,
+    /// True for one frame when local player's round damage increased (hit feedback).
+    pub hit_pulse: bool,
+    pub hit_damage_delta: f32,
+    pub vote: VoteState,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -54,6 +58,17 @@ pub struct PlayerData {
     pub color: i32,
     pub rotation: f32,
     pub sound: Option<SoundType>,
+    pub is_scoped: bool,
+    pub is_flashed: bool,
+    pub team: u8,
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct VoteState {
+    pub active: bool,
+    pub is_yes_no: bool,
+    pub potential_votes: i32,
+    pub options: [i32; 5],
 }
 
 #[derive(Debug, Default, Serialize)]

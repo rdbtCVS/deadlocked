@@ -72,6 +72,7 @@ impl CS2 {
         self.players.clear();
         self.entities.clear();
         self.planted_c4 = None;
+        self.vote_controller_entity = None;
 
         let Some(local_player) = Player::local_player(self) else {
             return;
@@ -143,6 +144,9 @@ impl CS2 {
                     if planted_c4.is_relevant(self) {
                         self.planted_c4 = Some(planted_c4)
                     }
+                }
+                class::VOTE_CONTROLLER => {
+                    self.vote_controller_entity = Some(entity);
                 }
                 class::INFERNO => {
                     self.entities.push(Entity::Inferno(Inferno::new(entity)));

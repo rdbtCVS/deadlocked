@@ -42,7 +42,12 @@ pub mod cs2 {
         pub const FLASHBANG: &str = "21C_FlashbangProjectile";
         pub const HE_GRENADE: &str = "21C_HEGrenadeProjectile";
         pub const DECOY: &str = "17C_DecoyProjectile";
+        /// RTTI type name for `C_VoteController` (length prefix + name).
+        pub const VOTE_CONTROLLER: &str = "16C_VoteController";
     }
+
+    /// Approximate hammer units per meter for distance display (community standard).
+    pub const HAMMER_UNITS_PER_METER: f32 = 52.49;
 }
 
 pub mod elf {

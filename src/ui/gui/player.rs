@@ -1,9 +1,14 @@
 use egui::{DragValue, Ui};
+use strum::IntoEnumIterator as _;
 
-use crate::ui::{
-    app::App,
-    gui::helpers::{
-        checkbox, checkbox_hover, collapsing_open, color_picker, combo_box, drag, keybind, scroll,
+use crate::{
+    config::BoxMode,
+    ui::{
+        app::App,
+        gui::helpers::{
+            checkbox, checkbox_hover, collapsing_open, color_picker, combo_box, drag, keybind,
+            scroll,
+        },
     },
 };
 
@@ -68,7 +73,57 @@ impl App {
                 self.send_config();
             }
 
-            if combo_box(ui, "box_mode", "Box Mode", &mut self.config.player.box_mode) {
+            {
+                let mut changed = false;
+                egui::ComboBox::new("box_mode", "Box Mode")
+                    .selected_text(self.config.player.box_mode.to_string())
+                    .show_ui(ui, |ui| {
+                        for mode in BoxMode::iter() {
+                            if ui
+                                .selectable_value(
+                                    &mut self.config.player.box_mode,
+                                    mode,
+                                    mode.to_string(),
+                                )
+                                .clicked()
+                            {
+                                changed = true;
+                            }
+                        }
+                    });
+                if changed {
+                    self.send_config();
+                }
+            }
+
+            if combo_box(ui, "box_fill", "Box Fill", &mut self.config.player.box_fill) {
+                self.send_config();
+            }
+
+            if drag(
+                ui,
+                "Fill alpha",
+                egui::DragValue::new(&mut self.config.player.box_fill_alpha)
+                    .range(0.0..=1.0)
+                    .speed(0.02),
+            ) {
+                self.send_config();
+            }
+
+            if ui
+                .checkbox(&mut self.config.player.esp_distance_meters, "Distance (m)")
+                .changed()
+            {
+                self.send_config();
+            }
+
+            if ui
+                .checkbox(
+                    &mut self.config.player.esp_status_flags,
+                    "Scoped / flashed labels",
+                )
+                .changed()
+            {
                 self.send_config();
             }
 

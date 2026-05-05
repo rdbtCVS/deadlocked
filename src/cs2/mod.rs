@@ -15,7 +15,7 @@ use crate::{
         offsets::Offsets,
         target::Target,
     },
-    data::{Data, PlayerData},
+    data::{Data, PlayerData, VoteState},
     math::{angles_from_vector, vec2_clamp},
     os::{mouse::Mouse, process::Process},
     parser::{bvh::Bvh, read_map},
@@ -50,6 +50,9 @@ pub struct CS2 {
     weapon: Weapon,
     planted_c4: Option<PlantedC4>,
     last_cache: Instant,
+    vote_controller_entity: Option<u64>,
+    last_local_round_damage: f32,
+    round_damage_initialized: bool,
 }
 
 impl CS2 {
@@ -121,7 +124,7 @@ impl CS2 {
         self.aimbot(config, mouse);
     }
 
-    pub fn data(&self, config: &Config, data: &mut Data) {
+    pub fn data(&mut self, config: &Config, data: &mut Data) {
         data.players.clear();
         data.friendlies.clear();
         data.spectators.clear();
@@ -142,20 +145,25 @@ impl CS2 {
         let Some(local_player) = Player::local_player(self) else {
             data.weapon = Weapon::default();
             data.in_game = false;
+            self.round_damage_initialized = false;
             return;
         };
         let local_team = local_player.team(self);
         if local_team != TEAM_T && local_team != TEAM_CT {
             data.weapon = Weapon::default();
             data.in_game = false;
+            self.round_damage_initialized = false;
             return;
         }
 
         for player in &self.players {
-            if let Some(target) = player.spectator_target(self)
-                && target.pawn == local_player.pawn
-            {
-                data.spectators.push(player.name(self));
+            if !player.is_valid(self) {
+                if let Some(target) = player.spectator_target(self)
+                    && target.pawn == local_player.pawn
+                {
+                    data.spectators.push(player.name(self));
+                }
+                continue;
             }
 
             let player_data = PlayerData {
@@ -175,6 +183,9 @@ impl CS2 {
                 color: player.color(self),
                 rotation: player.rotation(self),
                 sound: player.is_making_sound(self),
+                is_scoped: player.is_scoped(self),
+                is_flashed: player.is_flashed(self),
+                team: player.team(self),
             };
 
             if !self.is_ffa() && player.team(self) == local_team {
@@ -204,7 +215,43 @@ impl CS2 {
             color: local_player.color(self),
             rotation: local_player.rotation(self),
             sound: None,
+            is_scoped: local_player.is_scoped(self),
+            is_flashed: local_player.is_flashed(self),
+            team: local_team,
         };
+
+        data.hit_pulse = false;
+        data.hit_damage_delta = 0.0;
+        if let Some(damage) = local_player.round_damage(self) {
+            if !self.round_damage_initialized {
+                self.last_local_round_damage = damage;
+                self.round_damage_initialized = true;
+            } else if damage < self.last_local_round_damage - 0.5 {
+                self.last_local_round_damage = damage;
+            } else if damage > self.last_local_round_damage + 0.5 {
+                data.hit_pulse = true;
+                data.hit_damage_delta = damage - self.last_local_round_damage;
+                self.last_local_round_damage = damage;
+            }
+        }
+
+        data.vote = VoteState::default();
+        if let (Some(vo), Some(entity)) = (&self.offsets.vote, self.vote_controller_entity) {
+            let active: i32 = self.process.read(entity + vo.active_issue);
+            if active >= 0 {
+                let mut options = [0i32; 5];
+                for i in 0..5 {
+                    options[i] =
+                        self.process.read(entity + vo.vote_option_count + i as u64 * 4);
+                }
+                data.vote = VoteState {
+                    active: true,
+                    is_yes_no: self.process.read::<u8>(entity + vo.is_yes_no) != 0,
+                    potential_votes: self.process.read(entity + vo.potential_votes),
+                    options,
+                };
+            }
+        }
 
         data.entities = self
             .entities
@@ -281,6 +328,9 @@ impl CS2 {
             weapon: Weapon::default(),
             planted_c4: None,
             last_cache: Instant::now(),
+            vote_controller_entity: None,
+            last_local_round_damage: 0.0,
+            round_damage_initialized: false,
         }
     }
 

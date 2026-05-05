@@ -238,10 +238,29 @@ pub enum DrawMode {
     Color,
 }
 
-#[derive(Debug, Clone, PartialEq, EnumIter, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumIter, Serialize, Deserialize)]
 pub enum BoxMode {
     Gap,
     Full,
+    /// Yaw-oriented 3D wireframe in world space (mutually exclusive with 2D box styles).
+    ThreeD,
+}
+
+impl std::fmt::Display for BoxMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BoxMode::Gap => write!(f, "2D gap"),
+            BoxMode::Full => write!(f, "2D full"),
+            BoxMode::ThreeD => write!(f, "3D"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, Serialize, Deserialize)]
+pub enum BoxFill {
+    None,
+    Solid,
+    Gradient,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -264,6 +283,13 @@ pub struct PlayerConfig {
     pub tags: bool,
     pub visible_only: bool,
     pub sound: SoundConfig,
+    /// Fill inside the 2D box (gap mode has no inner rect; use full box for fill).
+    pub box_fill: BoxFill,
+    /// 0–1 alpha used for solid / gradient fill.
+    pub box_fill_alpha: f32,
+    pub esp_distance_meters: bool,
+    /// SCOPE / FLASH text when scoped or blinded.
+    pub esp_status_flags: bool,
 }
 
 impl Default for PlayerConfig {
@@ -286,6 +312,10 @@ impl Default for PlayerConfig {
             tags: true,
             visible_only: false,
             sound: SoundConfig::default(),
+            box_fill: BoxFill::None,
+            box_fill_alpha: 0.25,
+            esp_distance_meters: true,
+            esp_status_flags: true,
         }
     }
 }
@@ -338,6 +368,9 @@ pub struct HudConfig {
     pub font_size: f32,
     pub icon_size: f32,
     pub debug: bool,
+    pub vote_hud: bool,
+    pub hit_marker: bool,
+    pub hit_sound: bool,
 }
 
 impl Default for HudConfig {
@@ -362,6 +395,9 @@ impl Default for HudConfig {
             font_size: 16.0,
             icon_size: 20.0,
             debug: false,
+            vote_hud: true,
+            hit_marker: true,
+            hit_sound: true,
         }
     }
 }

@@ -110,6 +110,18 @@ impl App {
             if checkbox(ui, "Spectator List", &mut self.config.hud.spectator_list) {
                 self.send_config();
             }
+
+            if checkbox(ui, "Vote HUD", &mut self.config.hud.vote_hud) {
+                self.send_config();
+            }
+
+            if ui.checkbox(&mut self.config.hud.hit_marker, "Hit marker").changed() {
+                self.send_config();
+            }
+
+            if ui.checkbox(&mut self.config.hud.hit_sound, "Hit sound").changed() {
+                self.send_config();
+            }
         });
 
         ui.collapsing("Sniper Crosshair", |ui| {
