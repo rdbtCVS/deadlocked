@@ -43,6 +43,10 @@ impl App {
                     self.send_config();
                 }
             });
+
+            collapsing_open(ui, "ESP layout", |ui| {
+                self.esp_layout_preview(ui);
+            });
         });
     }
 
@@ -110,23 +114,6 @@ impl App {
                 self.send_config();
             }
 
-            if ui
-                .checkbox(&mut self.config.player.esp_distance_meters, "Distance (m)")
-                .changed()
-            {
-                self.send_config();
-            }
-
-            if ui
-                .checkbox(
-                    &mut self.config.player.esp_status_flags,
-                    "Scoped / flashed labels",
-                )
-                .changed()
-            {
-                self.send_config();
-            }
-
             if combo_box(
                 ui,
                 "draw_skeleton",
@@ -152,43 +139,6 @@ impl App {
     }
 
     fn player_right(&mut self, ui: &mut Ui) {
-        collapsing_open(ui, "Info", |ui| {
-            if ui
-                .checkbox(&mut self.config.player.health_bar, "Health Bar")
-                .changed()
-            {
-                self.send_config();
-            }
-
-            if ui
-                .checkbox(&mut self.config.player.armor_bar, "Armor Bar")
-                .changed()
-            {
-                self.send_config();
-            }
-
-            if ui
-                .checkbox(&mut self.config.player.player_name, "Player Name")
-                .changed()
-            {
-                self.send_config();
-            }
-
-            if ui
-                .checkbox(&mut self.config.player.weapon_icon, "Weapon Icon")
-                .changed()
-            {
-                self.send_config();
-            }
-
-            if ui
-                .checkbox(&mut self.config.player.tags, "Show Tags")
-                .changed()
-            {
-                self.send_config();
-            }
-        });
-
         ui.collapsing("Sound ESP", |ui| {
             if checkbox_hover(
                 ui,

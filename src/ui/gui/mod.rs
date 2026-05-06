@@ -10,6 +10,7 @@ mod about;
 pub mod aimbot;
 mod application;
 mod config;
+mod esp_preview;
 mod grenade;
 mod helpers;
 mod hud;

@@ -3,10 +3,7 @@ use std::time::Instant;
 use egui::{Align2, Color32, Painter, Stroke, pos2};
 
 use crate::{
-    config::KeyMode,
-    cs2::entity::weapon_class::WeaponClass,
-    data::Data,
-    math::world_to_screen,
+    config::KeyMode, cs2::entity::weapon_class::WeaponClass, data::Data, math::world_to_screen,
     ui::app::App,
 };
 
@@ -266,10 +263,7 @@ impl App {
                 v.potential_votes.max(1),
             )
         } else {
-            format!(
-                "Vote  {:?}  potential {}",
-                v.options, v.potential_votes
-            )
+            format!("Vote  {:?}  potential {}", v.options, v.potential_votes)
         };
         self.text_sized(
             painter,
@@ -281,12 +275,7 @@ impl App {
         );
     }
 
-    pub fn draw_hit_marker(
-        &mut self,
-        painter: &Painter,
-        window_size: glam::Vec2,
-        in_game: bool,
-    ) {
+    pub fn draw_hit_marker(&mut self, painter: &Painter, window_size: glam::Vec2, in_game: bool) {
         if !self.config.hud.hit_marker || !in_game {
             return;
         }
@@ -338,7 +327,10 @@ impl App {
             self.text_sized(
                 painter,
                 format!("-{:.0}", self.last_hit_damage),
-                pos2(center.x, center.y - gap - len - self.config.hud.font_size * 1.2),
+                pos2(
+                    center.x,
+                    center.y - gap - len - self.config.hud.font_size * 1.2,
+                ),
                 Align2::CENTER_BOTTOM,
                 Some(Color32::from_rgba_unmultiplied(255, 200, 80, a)),
                 self.config.hud.font_size * 1.15,

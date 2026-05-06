@@ -115,11 +115,17 @@ impl App {
                 self.send_config();
             }
 
-            if ui.checkbox(&mut self.config.hud.hit_marker, "Hit marker").changed() {
+            if ui
+                .checkbox(&mut self.config.hud.hit_marker, "Hit marker")
+                .changed()
+            {
                 self.send_config();
             }
 
-            if ui.checkbox(&mut self.config.hud.hit_sound, "Hit sound").changed() {
+            if ui
+                .checkbox(&mut self.config.hud.hit_sound, "Hit sound")
+                .changed()
+            {
                 self.send_config();
             }
         });

@@ -114,9 +114,7 @@ impl CS2 {
             return None;
         };
         // 0x0D + 4, 12, 20, 28
-        let vphys_world_global_ptr = self
-            .process
-            .get_relative_address(vphys_world, 3, 7);
+        let vphys_world_global_ptr = self.process.get_relative_address(vphys_world, 3, 7);
         let vphys_world_global: u64 = self.process.read(vphys_world_global_ptr);
         offsets.direct.vphys_world = vphys_world_global;
 
@@ -239,14 +237,17 @@ impl CS2 {
             client.get("C_VoteController", "m_nPotentialVotes"),
             client.get("C_VoteController", "m_bIsYesNoVote"),
         ) {
-            (Some(active_issue), Some(vote_option_count), Some(potential_votes), Some(is_yes_no)) => {
-                Some(VoteControllerOffsets {
-                    active_issue,
-                    vote_option_count,
-                    potential_votes,
-                    is_yes_no,
-                })
-            }
+            (
+                Some(active_issue),
+                Some(vote_option_count),
+                Some(potential_votes),
+                Some(is_yes_no),
+            ) => Some(VoteControllerOffsets {
+                active_issue,
+                vote_option_count,
+                potential_votes,
+                is_yes_no,
+            }),
             _ => {
                 utils::debug!("C_VoteController schema not available; vote HUD disabled");
                 None

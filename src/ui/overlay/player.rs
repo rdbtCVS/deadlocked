@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use egui::{Align2, Color32, FontId, Painter, Shape, Stroke, pos2};
+use egui::{Color32, Painter, Shape, Stroke, pos2};
 use epaint::Mesh;
 use glam::{Vec3, vec3};
 
@@ -120,8 +120,6 @@ impl App {
         color = Self::alpha(color, alpha);
 
         let stroke = Stroke::new(line_width, color);
-        let icon_line = self.config.hud.icon_size * esp_scale;
-        let icon_font = FontId::monospace(icon_line);
 
         let midpoint = (player.position + player.head) / 2.0;
         let height = player.head.z - player.position.z + 24.0;
@@ -219,161 +217,29 @@ impl App {
             }
         }
 
-        // health bar
-        if self.config.player.health_bar {
-            let x = bl.x - line_width * 2.0;
-            let delta = bl.y - tl.y;
-            painter.line(
-                vec![
-                    pos2(x, bl.y),
-                    pos2(x, bl.y - (delta * player.health as f32 / 100.0)),
-                ],
-                Stroke::new(line_width, Self::alpha(health_color, alpha)),
-            );
-        }
-
-        if self.config.player.armor_bar && player.armor > 0 {
-            let x = bl.x
-                - line_width
-                    * if self.config.player.health_bar {
-                        4.0
-                    } else {
-                        2.0
-                    };
-            let delta = bl.y - tl.y;
-            painter.line(
-                vec![
-                    pos2(x, bl.y),
-                    pos2(x, bl.y - (delta * player.armor as f32 / 100.0)),
-                ],
-                Stroke::new(
-                    line_width,
-                    Self::alpha(Color32::BLUE, alpha),
-                ),
-            );
-        }
-
-        let mut offset = 0.0;
-        let font_size = self.config.hud.font_size * esp_scale;
-        let text_color = Self::alpha(self.config.hud.text_color, alpha);
-        if self.config.player.player_name {
-            self.text_sized(
-                painter,
-                &player.name,
-                pos2(tr.x + ew, tr.y + offset),
-                Align2::LEFT_TOP,
-                Some(text_color),
-                font_size,
-            );
-            offset += font_size;
-        }
-
-        if self.config.player.tags && player.has_defuser {
-            painter.text(
-                pos2(tr.x + ew, tr.y + offset),
-                Align2::LEFT_TOP,
-                "\u{e00f}",
-                icon_font.clone(),
-                text_color,
-            );
-            offset += font_size;
-        }
-
-        if self.config.player.tags && player.has_helmet {
-            painter.text(
-                pos2(tr.x + ew, tr.y + offset),
-                Align2::LEFT_TOP,
-                "\u{e017}",
-                icon_font.clone(),
-                text_color,
-            );
-            offset += font_size;
-        }
-
-        if self.config.player.tags && player.has_bomb {
-            painter.text(
-                pos2(tr.x + ew, tr.y + offset),
-                Align2::LEFT_TOP,
-                "\u{e01e}",
-                icon_font.clone(),
-                text_color,
-            );
-        }
-
-        if self.config.player.weapon_icon {
-            painter.text(
-                pos2(bl.x + half_width, bl.y),
-                Align2::CENTER_TOP,
-                player.weapon.to_icon(),
-                icon_font.clone(),
-                text_color,
-            );
-            if player.ammo.0 >= 0 {
-                const AMMO_GAP: f32 = 3.0;
-                self.text_sized(
-                    painter,
-                    format!("{}/{}", player.ammo.0, player.ammo.1),
-                    pos2(bl.x + half_width, bl.y + icon_line + AMMO_GAP),
-                    Align2::CENTER_TOP,
-                    Some(text_color),
-                    font_size,
-                );
-            }
-        }
-
-        // Place distance / flags below the weapon row (icon uses icon_size, not font_size).
-        const SECTION_GAP: f32 = 4.0;
-        let mut below = bl.y;
-        if self.config.player.weapon_icon {
-            below += icon_line;
-            if player.ammo.0 >= 0 {
-                below += SECTION_GAP + font_size;
-            }
-            below += SECTION_GAP;
-        } else {
-            below += SECTION_GAP;
-        }
-
-        if self.config.player.esp_distance_meters {
-            let dist_font = font_size * 0.95;
-            let m = distance / HAMMER_UNITS_PER_METER;
-            self.text_sized(
-                painter,
-                format!("{:.0} m", m),
-                pos2(bottom.x, below),
-                Align2::CENTER_TOP,
-                Some(text_color),
-                dist_font,
-            );
-            below += dist_font + 2.0;
-        }
-
-        if self.config.player.esp_status_flags && (player.is_scoped || player.is_flashed) {
-            let mut flags = String::new();
-            if player.is_scoped {
-                flags.push_str("[SCOPE]");
-            }
-            if player.is_flashed {
-                if !flags.is_empty() {
-                    flags.push(' ');
-                }
-                flags.push_str("[FLASH]");
-            }
-            let flag_color = if player.is_flashed {
-                Color32::YELLOW
-            } else {
-                text_color
-            };
-            let flags_font = font_size * 0.85;
-            self.text_sized(
-                painter,
-                flags,
-                pos2(bottom.x, below),
-                Align2::CENTER_TOP,
-                Some(Self::alpha(flag_color, alpha)),
-                flags_font,
-            );
-        }
+        let geo = crate::ui::esp_hud::EspBoxGeom { tl, tr, bl, br, ew };
+        let sample = crate::ui::esp_hud::EspHudSample {
+            health: player.health,
+            armor: player.armor,
+            name: player.name.as_str(),
+            weapon_icon: player.weapon.to_icon(),
+            ammo: player.ammo,
+            has_defuser: player.has_defuser,
+            has_helmet: player.has_helmet,
+            has_bomb: player.has_bomb,
+            distance_m: distance / HAMMER_UNITS_PER_METER,
+            is_scoped: player.is_scoped,
+            is_flashed: player.is_flashed,
+        };
+        crate::ui::esp_hud::draw_esp_hud_extras(
+            painter,
+            &self.config.player,
+            &self.config.hud,
+            &geo,
+            &sample,
+            alpha,
+            esp_scale,
+        );
     }
 
     fn draw_esp_3d_box(

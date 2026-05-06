@@ -263,6 +263,48 @@ pub enum BoxFill {
     Gradient,
 }
 
+/// Where HUD elements are anchored relative to the 2D player box (`Disabled` skips drawing).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum EspZone {
+    Top,
+    Left,
+    Right,
+    Bottom,
+    /// Do not draw this element on the overlay.
+    Disabled,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct EspElementLayout {
+    pub health_bar: EspZone,
+    pub armor_bar: EspZone,
+    pub player_name: EspZone,
+    pub tags: EspZone,
+    pub weapon_icon: EspZone,
+    pub distance_meters: EspZone,
+    pub status_flags: EspZone,
+}
+
+impl Default for EspElementLayout {
+    fn default() -> Self {
+        Self {
+            health_bar: EspZone::Left,
+            armor_bar: EspZone::Left,
+            player_name: EspZone::Right,
+            tags: EspZone::Right,
+            weapon_icon: EspZone::Bottom,
+            distance_meters: EspZone::Bottom,
+            status_flags: EspZone::Bottom,
+        }
+    }
+}
+
+fn default_legacy_esp_enabled() -> bool {
+    true
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PlayerConfig {
@@ -276,20 +318,56 @@ pub struct PlayerConfig {
     pub draw_skeleton: DrawMode,
     pub skeleton_color: Color32,
     pub head_circle: bool,
-    pub health_bar: bool,
-    pub armor_bar: bool,
-    pub player_name: bool,
-    pub weapon_icon: bool,
-    pub tags: bool,
+    /// Legacy checkbox; superseded by `esp_layout`; read from `[player]` TOML only.
+    #[serde(
+        rename = "health_bar",
+        default = "default_legacy_esp_enabled",
+        skip_serializing
+    )]
+    pub health_bar_legacy: bool,
+    #[serde(
+        rename = "armor_bar",
+        default = "default_legacy_esp_enabled",
+        skip_serializing
+    )]
+    pub armor_bar_legacy: bool,
+    #[serde(
+        rename = "player_name",
+        default = "default_legacy_esp_enabled",
+        skip_serializing
+    )]
+    pub player_name_legacy: bool,
+    #[serde(
+        rename = "weapon_icon",
+        default = "default_legacy_esp_enabled",
+        skip_serializing
+    )]
+    pub weapon_icon_legacy: bool,
+    #[serde(
+        rename = "tags",
+        default = "default_legacy_esp_enabled",
+        skip_serializing
+    )]
+    pub tags_legacy: bool,
     pub visible_only: bool,
     pub sound: SoundConfig,
     /// Fill inside the 2D box (gap mode has no inner rect; use full box for fill).
     pub box_fill: BoxFill,
     /// 0–1 alpha used for solid / gradient fill.
     pub box_fill_alpha: f32,
-    pub esp_distance_meters: bool,
-    /// SCOPE / FLASH text when scoped or blinded.
-    pub esp_status_flags: bool,
+    #[serde(
+        rename = "esp_distance_meters",
+        default = "default_legacy_esp_enabled",
+        skip_serializing
+    )]
+    pub esp_distance_meters_legacy: bool,
+    #[serde(
+        rename = "esp_status_flags",
+        default = "default_legacy_esp_enabled",
+        skip_serializing
+    )]
+    pub esp_status_flags_legacy: bool,
+    pub esp_layout: EspElementLayout,
 }
 
 impl Default for PlayerConfig {
@@ -305,18 +383,64 @@ impl Default for PlayerConfig {
             draw_skeleton: DrawMode::Health,
             skeleton_color: Color32::WHITE,
             head_circle: true,
-            health_bar: true,
-            armor_bar: true,
-            player_name: true,
-            weapon_icon: true,
-            tags: true,
+            health_bar_legacy: true,
+            armor_bar_legacy: true,
+            player_name_legacy: true,
+            weapon_icon_legacy: true,
+            tags_legacy: true,
             visible_only: false,
             sound: SoundConfig::default(),
             box_fill: BoxFill::None,
             box_fill_alpha: 0.25,
-            esp_distance_meters: true,
-            esp_status_flags: true,
+            esp_distance_meters_legacy: true,
+            esp_status_flags_legacy: true,
+            esp_layout: EspElementLayout::default(),
         }
+    }
+}
+
+impl PlayerConfig {
+    /// Migrate pre-layout-only configs: `[player] health_bar = false` etc. map to `esp_layout.* =
+    /// Disabled`, then canonicalize legacy flags so they aren't re-serialized.
+    ///
+    /// If `esp_layout` already differs from defaults, it is assumed intentional (explicit TOML
+    /// layout) and legacy booleans do not overwrite it — only legacy keys are canonicalized away.
+    pub fn migrate_legacy_esp_toggles_into_layout(&mut self) {
+        use EspZone::Disabled;
+
+        let layout_is_builtin_default = self.esp_layout == EspElementLayout::default();
+
+        if layout_is_builtin_default {
+            if !self.health_bar_legacy {
+                self.esp_layout.health_bar = Disabled;
+            }
+            if !self.armor_bar_legacy {
+                self.esp_layout.armor_bar = Disabled;
+            }
+            if !self.player_name_legacy {
+                self.esp_layout.player_name = Disabled;
+            }
+            if !self.weapon_icon_legacy {
+                self.esp_layout.weapon_icon = Disabled;
+            }
+            if !self.tags_legacy {
+                self.esp_layout.tags = Disabled;
+            }
+            if !self.esp_distance_meters_legacy {
+                self.esp_layout.distance_meters = Disabled;
+            }
+            if !self.esp_status_flags_legacy {
+                self.esp_layout.status_flags = Disabled;
+            }
+        }
+
+        self.health_bar_legacy = true;
+        self.armor_bar_legacy = true;
+        self.player_name_legacy = true;
+        self.weapon_icon_legacy = true;
+        self.tags_legacy = true;
+        self.esp_distance_meters_legacy = true;
+        self.esp_status_flags_legacy = true;
     }
 }
 
@@ -491,13 +615,20 @@ pub fn parse_config(path: &Path) -> Config {
         return Config::default();
     };
 
-    let config = toml::from_str(&config_string);
-    if config.is_err() {
-        utils::warn!("config file invalid");
-    } else if let Some(file_name) = path.file_name() {
-        utils::info!("loaded config {:?}", file_name);
-    }
-    config.unwrap_or_default()
+    let mut config: Config = match toml::from_str(&config_string) {
+        Ok(c) => {
+            if let Some(file_name) = path.file_name() {
+                utils::info!("loaded config {:?}", file_name);
+            }
+            c
+        }
+        Err(_) => {
+            utils::warn!("config file invalid");
+            Config::default()
+        }
+    };
+    config.player.migrate_legacy_esp_toggles_into_layout();
+    config
 }
 
 pub fn write_config(config: &Config, path: &Path) {

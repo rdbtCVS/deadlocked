@@ -241,8 +241,9 @@ impl CS2 {
             if active >= 0 {
                 let mut options = [0i32; 5];
                 for i in 0..5 {
-                    options[i] =
-                        self.process.read(entity + vo.vote_option_count + i as u64 * 4);
+                    options[i] = self
+                        .process
+                        .read(entity + vo.vote_option_count + i as u64 * 4);
                 }
                 data.vote = VoteState {
                     active: true,
