@@ -1,8 +1,12 @@
 use std::hash::Hash;
 
 use egui::{CollapsingHeader, Color32, DragValue, Event, Sense, Ui, Widget};
+use strum::IntoEnumIterator as _;
 
-use crate::cs2::key_codes::KeyCode;
+use crate::{
+    config::KeyMode,
+    cs2::key_codes::KeyCode,
+};
 
 pub fn collapsing_open(ui: &mut Ui, title: &str, add_body: impl FnOnce(&mut Ui)) {
     CollapsingHeader::new(title)
@@ -85,23 +89,36 @@ pub fn color_picker(ui: &mut Ui, label: &str, color: &mut Color32) -> bool {
     changed
 }
 
-pub fn keybind(ui: &mut Ui, id: &str, label: &str, keycode: &mut KeyCode) -> bool {
+pub fn hotkey_row(
+    ui: &mut Ui,
+    id_base: &str,
+    name: &str,
+    key: &mut Option<KeyCode>,
+    mode: &mut KeyMode,
+) -> bool {
+    let mut changed = false;
     ui.horizontal(|ui| {
-        let res = ui.add(Keybind::new(keycode, id));
-        ui.label(label);
-        res
-    })
-    .inner
-    .changed()
+        changed |= ui.add(KeybindOpt::new(key, id_base)).changed();
+        egui::ComboBox::new(format!("{id_base}_mode"), "")
+            .width(72.0)
+            .selected_text(format!("{mode:?}"))
+            .show_ui(ui, |ui| {
+                for m in KeyMode::iter() {
+                    changed |= ui.selectable_value(mode, m, format!("{m:?}")).clicked();
+                }
+            });
+        ui.label(name);
+    });
+    changed
 }
 
-pub struct Keybind<'gui> {
-    keycode: &'gui mut KeyCode,
+pub struct KeybindOpt<'gui> {
+    keycode: &'gui mut Option<KeyCode>,
     id: egui::Id,
 }
 
-impl<'gui> Keybind<'gui> {
-    pub fn new(keycode: &'gui mut KeyCode, id: impl Hash) -> Self {
+impl<'gui> KeybindOpt<'gui> {
+    pub fn new(keycode: &'gui mut Option<KeyCode>, id: impl Hash) -> Self {
         Self {
             keycode,
             id: egui::Id::new(id),
@@ -109,7 +126,7 @@ impl<'gui> Keybind<'gui> {
     }
 }
 
-impl<'gui> Widget for Keybind<'gui> {
+impl<'gui> Widget for KeybindOpt<'gui> {
     fn ui(self, ui: &mut Ui) -> egui::Response {
         let listening_id = ui.make_persistent_id(self.id);
 
@@ -121,7 +138,9 @@ impl<'gui> Widget for Keybind<'gui> {
         let text = if listening {
             "...".to_string()
         } else {
-            format!("{:?}", self.keycode)
+            self.keycode
+                .map(|k| format!("{k:?}"))
+                .unwrap_or_else(|| "\u{2014}".to_string())
         };
 
         let mut response = ui.button(text);
@@ -135,7 +154,7 @@ impl<'gui> Widget for Keybind<'gui> {
         }
 
         if listening {
-            let input = ui.input(|i| {
+            let key_opt = ui.input(|i| {
                 for event in &i.events {
                     if let Event::Key {
                         key,
@@ -144,11 +163,13 @@ impl<'gui> Widget for Keybind<'gui> {
                         ..
                     } = event
                     {
-                        dbg!(key);
+                        if *key == egui::Key::Backspace {
+                            return Some(None);
+                        }
                         if *key == egui::Key::F35 {
-                            return KeyCode::from_egui_modifiers(*modifiers);
-                        } else {
-                            return KeyCode::from_egui(*key);
+                            return KeyCode::from_egui_modifiers(*modifiers).map(Some);
+                        } else if let Some(code) = KeyCode::from_egui(*key) {
+                            return Some(Some(code));
                         }
                     }
 
@@ -158,15 +179,15 @@ impl<'gui> Widget for Keybind<'gui> {
                         ..
                     } = event
                     {
-                        return Some(KeyCode::from_egui_mouse(*button));
+                        return Some(Some(KeyCode::from_egui_mouse(*button)));
                     }
                 }
                 None
             });
 
-            if let Some(input) = input {
-                if input != KeyCode::Escape {
-                    *self.keycode = input;
+            if let Some(assignment) = key_opt {
+                if assignment.map_or(true, |k| k != KeyCode::Escape) {
+                    *self.keycode = assignment;
                     response.mark_changed();
                 }
                 listening = false;

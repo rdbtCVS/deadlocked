@@ -287,11 +287,11 @@ impl CS2 {
         data.map_name = self.current_map();
         data.aimbot_active = match self.aimbot_config(config).mode {
             KeyMode::Toggle => self.aim.active,
-            KeyMode::Hold => self.input.is_key_pressed(config.aim.aimbot_hotkey),
+            KeyMode::Hold => config.aim.aimbot_hotkey.is_some_and(|k| self.input.is_key_pressed(k)),
         };
         data.triggerbot_active = match self.triggerbot_config(config).mode {
             KeyMode::Toggle => self.trigger.active,
-            KeyMode::Hold => self.input.is_key_pressed(config.aim.triggerbot_hotkey),
+            KeyMode::Hold => config.aim.triggerbot_hotkey.is_some_and(|k| self.input.is_key_pressed(k)),
         };
         data.esp_active = self.esp_enabled(config);
 
@@ -334,12 +334,7 @@ impl CS2 {
     }
 
     fn aimbot_config<'a>(&self, config: &'a Config) -> &'a AimbotConfig {
-        if let Some(weapon_config) = config.aim.weapons.get(&self.weapon)
-            && weapon_config.aimbot.enable_override
-        {
-            return &weapon_config.aimbot;
-        }
-        &config.aim.global.aimbot
+        crate::hotkeys::resolved_aimbot_config(&config.aim, &self.weapon)
     }
 
     fn rcs_config<'a>(&self, config: &'a Config) -> &'a RcsConfig {
@@ -352,12 +347,7 @@ impl CS2 {
     }
 
     fn triggerbot_config<'a>(&self, config: &'a Config) -> &'a TriggerbotConfig {
-        if let Some(weapon_config) = config.aim.weapons.get(&self.weapon)
-            && weapon_config.triggerbot.enable_override
-        {
-            return &weapon_config.triggerbot;
-        }
-        &config.aim.global.triggerbot
+        crate::hotkeys::resolved_triggerbot_config(&config.aim, &self.weapon)
     }
 
     fn angle_to_target(&self, local_player: &Player, position: &Vec3, aim_punch: &Vec2) -> Vec2 {

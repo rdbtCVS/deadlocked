@@ -5,6 +5,7 @@ use crate::{
     config::AimbotConfig,
     cs2::entity::weapon::Weapon,
     data::Data,
+    hotkeys,
     math::world_to_screen,
     ui::{app::App, grenades::Grenade},
 };
@@ -17,12 +18,7 @@ mod player;
 
 impl App {
     fn aimbot_config(&self, weapon: &Weapon) -> &AimbotConfig {
-        if let Some(weapon_config) = self.config.aim.weapons.get(weapon)
-            && weapon_config.aimbot.enable_override
-        {
-            return &weapon_config.aimbot;
-        }
-        &self.config.aim.global.aimbot
+        hotkeys::resolved_aimbot_config(&self.config.aim, weapon)
     }
 
     pub fn overlay(&mut self, ui: &mut Ui) {

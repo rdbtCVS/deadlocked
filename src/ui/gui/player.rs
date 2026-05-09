@@ -3,10 +3,11 @@ use strum::IntoEnumIterator as _;
 
 use crate::{
     config::BoxMode,
+    hotkeys::HotkeySlot,
     ui::{
         app::App,
         gui::helpers::{
-            checkbox, checkbox_hover, collapsing_open, color_picker, combo_box, drag, keybind,
+            checkbox, checkbox_hover, collapsing_open, color_picker, combo_box, drag, hotkey_row,
             scroll,
         },
     },
@@ -56,12 +57,11 @@ impl App {
                 self.send_config();
             }
 
-            if keybind(
-                ui,
-                "esp_hotkey",
-                "ESP Hotkey",
-                &mut self.config.player.esp_hotkey,
-            ) {
+            let changed = {
+                let p = &mut self.config.player;
+                hotkey_row(ui, HotkeySlot::Esp.ui_id(), HotkeySlot::Esp.label(), &mut p.esp_hotkey, &mut p.esp_mode)
+            };
+            if changed {
                 self.send_config();
             }
 

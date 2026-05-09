@@ -23,7 +23,10 @@ pub struct Triggerbot {
 
 impl CS2 {
     pub fn triggerbot(&mut self, config: &Config) {
-        let hotkey = config.aim.triggerbot_hotkey;
+        let Some(hotkey) = config.aim.triggerbot_hotkey else {
+            self.trigger.active = false;
+            return;
+        };
         let config = self.triggerbot_config(config);
 
         if !config.enabled {

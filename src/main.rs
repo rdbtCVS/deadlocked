@@ -14,6 +14,7 @@ mod constants;
 mod cs2;
 mod data;
 mod game;
+mod hotkeys;
 mod math;
 mod message;
 mod os;

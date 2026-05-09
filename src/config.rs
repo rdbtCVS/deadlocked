@@ -162,7 +162,7 @@ impl Default for RcsConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, EnumIter)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, EnumIter)]
 pub enum KeyMode {
     Hold,
     Toggle,
@@ -206,11 +206,27 @@ impl Default for TriggerbotConfig {
     }
 }
 
+fn default_aimbot_hotkey() -> Option<KeyCode> {
+    Some(KeyCode::Mouse5)
+}
+
+fn default_triggerbot_hotkey() -> Option<KeyCode> {
+    Some(KeyCode::Mouse4)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AimConfig {
-    pub aimbot_hotkey: KeyCode,
-    pub triggerbot_hotkey: KeyCode,
+    #[serde(
+        default = "default_aimbot_hotkey",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub aimbot_hotkey: Option<KeyCode>,
+    #[serde(
+        default = "default_triggerbot_hotkey",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub triggerbot_hotkey: Option<KeyCode>,
     pub global: WeaponConfig,
     pub weapons: HashMap<Weapon, WeaponConfig>,
 }
@@ -223,8 +239,8 @@ impl Default for AimConfig {
         }
 
         Self {
-            aimbot_hotkey: KeyCode::Mouse5,
-            triggerbot_hotkey: KeyCode::Mouse4,
+            aimbot_hotkey: default_aimbot_hotkey(),
+            triggerbot_hotkey: default_triggerbot_hotkey(),
             global: WeaponConfig::enabled(true),
             weapons,
         }
@@ -305,11 +321,25 @@ fn default_legacy_esp_enabled() -> bool {
     true
 }
 
+fn default_esp_hotkey() -> Option<KeyCode> {
+    Some(KeyCode::X)
+}
+
+fn default_esp_mode() -> KeyMode {
+    KeyMode::Toggle
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PlayerConfig {
     pub enabled: bool,
-    pub esp_hotkey: KeyCode,
+    #[serde(
+        default = "default_esp_hotkey",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub esp_hotkey: Option<KeyCode>,
+    #[serde(default = "default_esp_mode")]
+    pub esp_mode: KeyMode,
     pub show_friendlies: bool,
     pub draw_box: DrawMode,
     pub box_mode: BoxMode,
@@ -374,7 +404,8 @@ impl Default for PlayerConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            esp_hotkey: KeyCode::X,
+            esp_hotkey: default_esp_hotkey(),
+            esp_mode: KeyMode::Toggle,
             show_friendlies: false,
             draw_box: DrawMode::Color,
             box_mode: BoxMode::Gap,

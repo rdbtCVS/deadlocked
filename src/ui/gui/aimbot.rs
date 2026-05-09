@@ -3,11 +3,12 @@ use strum::IntoEnumIterator as _;
 
 use crate::{
     cs2::bones::Bones,
+    hotkeys::HotkeySlot,
     ui::{
         app::App,
         drag_range::DragRange,
         gui::helpers::{
-            checkbox, checkbox_hover, collapsing_open, combo_box, drag, keybind, scroll,
+            checkbox, checkbox_hover, collapsing_open, combo_box, drag, hotkey_row, scroll,
         },
     },
 };
@@ -39,12 +40,22 @@ impl App {
 
     fn aimbot_left(&mut self, ui: &mut Ui) {
         collapsing_open(ui, "Aimbot", |ui| {
-            if keybind(
-                ui,
-                "aimbot_hotkey",
-                "Hotkey",
-                &mut self.config.aim.aimbot_hotkey,
-            ) {
+            let changed = {
+                let aim = &mut self.config.aim;
+                let wc = if self.aimbot_tab == AimbotTab::Weapon {
+                    aim.weapons.get_mut(&self.aimbot_weapon).unwrap()
+                } else {
+                    &mut aim.global
+                };
+                hotkey_row(
+                    ui,
+                    HotkeySlot::Aimbot.ui_id(),
+                    HotkeySlot::Aimbot.label(),
+                    &mut aim.aimbot_hotkey,
+                    &mut wc.aimbot.mode,
+                )
+            };
+            if changed {
                 self.send_config();
             }
 
@@ -63,15 +74,6 @@ impl App {
                 ui,
                 "Enable Aimbot",
                 &mut self.weapon_config().aimbot.enabled,
-            ) {
-                self.send_config();
-            }
-
-            if combo_box(
-                ui,
-                "aimbot_mode",
-                "Mode",
-                &mut self.weapon_config().aimbot.mode,
             ) {
                 self.send_config();
             }
@@ -197,12 +199,22 @@ impl App {
                 self.send_config();
             }
 
-            if keybind(
-                ui,
-                "triggerbot_hotkey",
-                "Hotkey",
-                &mut self.config.aim.triggerbot_hotkey,
-            ) {
+            let changed = {
+                let aim = &mut self.config.aim;
+                let wc = if self.aimbot_tab == AimbotTab::Weapon {
+                    aim.weapons.get_mut(&self.aimbot_weapon).unwrap()
+                } else {
+                    &mut aim.global
+                };
+                hotkey_row(
+                    ui,
+                    HotkeySlot::Triggerbot.ui_id(),
+                    HotkeySlot::Triggerbot.label(),
+                    &mut aim.triggerbot_hotkey,
+                    &mut wc.triggerbot.mode,
+                )
+            };
+            if changed {
                 self.send_config();
             }
 
@@ -214,15 +226,6 @@ impl App {
                 ))
                 .changed()
             {
-                self.send_config();
-            }
-
-            if combo_box(
-                ui,
-                "triggerbot_mode",
-                "Mode",
-                &mut self.weapon_config().triggerbot.mode,
-            ) {
                 self.send_config();
             }
 

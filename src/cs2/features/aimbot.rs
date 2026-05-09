@@ -17,7 +17,10 @@ pub struct Aimbot {
 
 impl CS2 {
     pub fn aimbot(&mut self, config: &Config, mouse: &mut Mouse) {
-        let hotkey = config.aim.aimbot_hotkey;
+        let Some(hotkey) = config.aim.aimbot_hotkey else {
+            self.aim.active = false;
+            return;
+        };
         let config = self.aimbot_config(config);
 
         if !config.enabled {

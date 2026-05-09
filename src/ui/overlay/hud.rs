@@ -2,8 +2,14 @@ use std::time::Instant;
 
 use egui::{Align2, Color32, Painter, Stroke, pos2};
 
+use strum::IntoEnumIterator as _;
+
 use crate::{
-    config::KeyMode, cs2::entity::weapon_class::WeaponClass, data::Data, math::world_to_screen,
+    config::KeyMode,
+    cs2::entity::weapon_class::WeaponClass,
+    data::Data,
+    hotkeys::{self, HotkeySlot},
+    math::world_to_screen,
     ui::app::App,
 };
 
@@ -84,32 +90,30 @@ impl App {
             return;
         }
 
+        let fs = self.config.hud.font_size;
         let position = pos2(10.0, data.window_size.y / 2.0);
-        let aimbot_color = if data.aimbot_active {
-            Color32::GREEN
-        } else {
-            Color32::WHITE
-        };
-        self.text(
-            painter,
-            format!("Aimbot: {:?}", self.config.aim.aimbot_hotkey),
-            position,
-            Align2::LEFT_TOP,
-            Some(aimbot_color),
-        );
+        let mut row: f32 = 0.0;
 
-        let triggerbot_color = if data.triggerbot_active {
-            Color32::GREEN
-        } else {
-            Color32::WHITE
-        };
-        self.text(
-            painter,
-            format!("Triggerbot: {:?}", self.config.aim.triggerbot_hotkey),
-            position + egui::vec2(0.0, self.config.hud.font_size),
-            Align2::LEFT_TOP,
-            Some(triggerbot_color),
-        );
+        let cfg = &self.config;
+        for slot in HotkeySlot::iter() {
+            let Some(key) = hotkeys::key(cfg, slot) else {
+                continue;
+            };
+            let name = slot.label();
+            let color = if hotkeys::hud_active(data, slot) {
+                Color32::GREEN
+            } else {
+                Color32::WHITE
+            };
+            self.text(
+                painter,
+                format!("{key:?} {name}"),
+                position + egui::vec2(0.0, row * fs),
+                Align2::LEFT_TOP,
+                Some(color),
+            );
+            row += 1.0;
+        }
     }
 
     pub fn draw_spectator_list(&self, painter: &Painter, data: &Data) {
@@ -117,10 +121,16 @@ impl App {
             return;
         }
 
-        let position = pos2(
-            10.0,
-            data.window_size.y / 2.0 + self.config.hud.font_size * 3.0,
-        );
+        let fs = self.config.hud.font_size;
+        let bound_count = HotkeySlot::iter()
+            .filter(|s| hotkeys::key(&self.config, *s).is_some())
+            .count();
+        let y_offset = if self.config.hud.keybind_list {
+            fs * (bound_count as f32 + 1.0)
+        } else {
+            fs * 3.0
+        };
+        let position = pos2(10.0, data.window_size.y / 2.0 + y_offset);
         self.text(
             painter,
             "Spectators:",
