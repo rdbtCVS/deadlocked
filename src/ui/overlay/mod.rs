@@ -66,32 +66,6 @@ impl App {
             self.draw_spectator_list(&painter, data);
             self.draw_vote_hud(&painter, data);
 
-            if data.aimbot_active {
-                self.text(
-                    &painter,
-                    "aimbot active",
-                    pos2(
-                        data.window_size.x / 2.0 + 8.0,
-                        data.window_size.y / 2.0 + 8.0,
-                    ),
-                    Align2::LEFT_TOP,
-                    None,
-                );
-            }
-
-            if data.triggerbot_active {
-                self.text(
-                    &painter,
-                    "trigger active",
-                    pos2(
-                        data.window_size.x / 2.0 + 8.0,
-                        data.window_size.y / 2.0 + 8.0 + self.config.hud.font_size,
-                    ),
-                    Align2::LEFT_TOP,
-                    None,
-                );
-            }
-
             self.grenade_manager(data, &painter);
 
             (data.window_size, data.in_game)

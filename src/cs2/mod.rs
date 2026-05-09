@@ -285,15 +285,13 @@ impl CS2 {
         data.in_game = true;
         data.is_ffa = self.is_ffa();
         data.map_name = self.current_map();
-        data.aimbot_active = if self.aimbot_config(config).mode == KeyMode::Toggle {
-            self.aim.active
-        } else {
-            false
+        data.aimbot_active = match self.aimbot_config(config).mode {
+            KeyMode::Toggle => self.aim.active,
+            KeyMode::Hold => self.input.is_key_pressed(config.aim.aimbot_hotkey),
         };
-        data.triggerbot_active = if self.triggerbot_config(config).mode == KeyMode::Toggle {
-            self.trigger.active
-        } else {
-            false
+        data.triggerbot_active = match self.triggerbot_config(config).mode {
+            KeyMode::Toggle => self.trigger.active,
+            KeyMode::Hold => self.input.is_key_pressed(config.aim.triggerbot_hotkey),
         };
         data.esp_active = self.esp_enabled(config);
 
