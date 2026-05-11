@@ -34,6 +34,8 @@ pub struct App {
     pub overlay: Option<WindowContext>,
     next_frame_time: Instant,
     pub show_about: bool,
+    pub drag_window_requested: bool,
+    pub close_requested: bool,
 
     pub channel: Channel<GameMessage, UiMessage>,
     pub data: Arc<Mutex<Data>>,
@@ -92,6 +94,8 @@ impl App {
 
             next_frame_time: Instant::now() + Duration::from_millis(16),
             show_about: false,
+            drag_window_requested: false,
+            close_requested: false,
 
             channel,
             data,

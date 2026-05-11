@@ -57,7 +57,6 @@ pub fn key(config: &Config, slot: HotkeySlot) -> Option<KeyCode> {
     }
 }
 
-
 pub fn hud_active(data: &Data, slot: HotkeySlot) -> bool {
     match slot {
         HotkeySlot::Aimbot => data.aimbot_active,

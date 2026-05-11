@@ -8,12 +8,13 @@ use crate::{
         app::App,
         drag_range::DragRange,
         gui::helpers::{
-            checkbox, checkbox_hover, collapsing_open, combo_box, drag, hotkey_row, scroll,
+            card, checkbox, checkbox_hover, collapsing_open, combo_box, drag, hotkey_row, scroll,
+            top_tab,
         },
     },
 };
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum AimbotTab {
     Global,
     Weapon,
@@ -22,13 +23,13 @@ pub enum AimbotTab {
 impl App {
     pub fn aimbot_settings(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
-            ui.selectable_value(&mut self.aimbot_tab, AimbotTab::Global, "Global");
-            ui.selectable_value(&mut self.aimbot_tab, AimbotTab::Weapon, "Weapon");
+            top_tab(ui, &mut self.aimbot_tab, AimbotTab::Global, "Global");
+            top_tab(ui, &mut self.aimbot_tab, AimbotTab::Weapon, "Weapon");
             if self.aimbot_tab == AimbotTab::Weapon {
                 combo_box(ui, "aimbot_weapon", "Weapon", &mut self.aimbot_weapon);
             }
         });
-        ui.separator();
+        ui.add_space(8.0);
         ui.columns(2, |cols| {
             let left = &mut cols[0];
             scroll(left, "aimbot_left", |ui| self.aimbot_left(ui));
@@ -79,7 +80,7 @@ impl App {
             }
         });
 
-        ui.collapsing("Targeting", |ui| {
+        card(ui, "Targeting", |ui| {
             if checkbox(
                 ui,
                 "Target Friendlies",
@@ -140,7 +141,7 @@ impl App {
             }
         });
 
-        ui.collapsing("Checks", |ui| {
+        card(ui, "Checks", |ui| {
             if checkbox(
                 ui,
                 "Visibility Check",
@@ -158,7 +159,7 @@ impl App {
             }
         });
 
-        ui.collapsing("Bones", |ui| {
+        card(ui, "Bones", |ui| {
             for bone in Bones::iter() {
                 let text = format!("{:?}", bone);
                 let index = self
@@ -248,7 +249,7 @@ impl App {
             }
         });
 
-        ui.collapsing("Checks\u{200b}", |ui| {
+        card(ui, "Checks\u{200b}", |ui| {
             if checkbox(
                 ui,
                 "Flash Check",

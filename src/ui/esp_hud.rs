@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use egui::{pos2, Align2, Color32, FontId, Painter, Pos2, Rect, Stroke, Vec2};
+use egui::{Align2, Color32, FontId, Painter, Pos2, Rect, Stroke, Vec2, pos2};
 
 use crate::config::{EspElementLayout, EspZone, PlayerConfig};
 

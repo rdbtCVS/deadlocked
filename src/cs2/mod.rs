@@ -287,11 +287,17 @@ impl CS2 {
         data.map_name = self.current_map();
         data.aimbot_active = match self.aimbot_config(config).mode {
             KeyMode::Toggle => self.aim.active,
-            KeyMode::Hold => config.aim.aimbot_hotkey.is_some_and(|k| self.input.is_key_pressed(k)),
+            KeyMode::Hold => config
+                .aim
+                .aimbot_hotkey
+                .is_some_and(|k| self.input.is_key_pressed(k)),
         };
         data.triggerbot_active = match self.triggerbot_config(config).mode {
             KeyMode::Toggle => self.trigger.active,
-            KeyMode::Hold => config.aim.triggerbot_hotkey.is_some_and(|k| self.input.is_key_pressed(k)),
+            KeyMode::Hold => config
+                .aim
+                .triggerbot_hotkey
+                .is_some_and(|k| self.input.is_key_pressed(k)),
         };
         data.esp_active = self.esp_enabled(config);
 

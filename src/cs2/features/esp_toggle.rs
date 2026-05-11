@@ -33,7 +33,10 @@ impl CS2 {
         }
         match config.player.esp_mode {
             KeyMode::Toggle => self.esp.active,
-            KeyMode::Hold => config.player.esp_hotkey.is_some_and(|k| self.input.is_key_pressed(k)),
+            KeyMode::Hold => config
+                .player
+                .esp_hotkey
+                .is_some_and(|k| self.input.is_key_pressed(k)),
         }
     }
 }

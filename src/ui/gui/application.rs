@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 
-use egui::Ui;
+use egui::{Button, Ui};
 
 use crate::{
     config::write_app_config,
@@ -17,6 +17,17 @@ impl App {
         ) {
             write_app_config(&self.app_config);
             STACKTRACE_SENT.store(!self.app_config.send_stacktraces, Ordering::Relaxed);
+        }
+
+        ui.add_space(12.0);
+        if ui.add(Button::new("About").frame(false)).clicked() {
+            self.show_about = true;
+        }
+
+        if ui.add(Button::new("Report Issue").frame(false)).clicked() {
+            let _ = std::process::Command::new("xdg-open")
+                .arg("https://github.com/avitran0/deadlocked/issues")
+                .status();
         }
     }
 

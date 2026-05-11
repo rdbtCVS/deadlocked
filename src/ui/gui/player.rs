@@ -7,8 +7,8 @@ use crate::{
     ui::{
         app::App,
         gui::helpers::{
-            checkbox, checkbox_hover, collapsing_open, color_picker, combo_box, drag, hotkey_row,
-            scroll,
+            card, checkbox, checkbox_hover, collapsing_open, color_picker, combo_box, drag,
+            hotkey_row, scroll,
         },
     },
 };
@@ -59,7 +59,13 @@ impl App {
 
             let changed = {
                 let p = &mut self.config.player;
-                hotkey_row(ui, HotkeySlot::Esp.ui_id(), HotkeySlot::Esp.label(), &mut p.esp_hotkey, &mut p.esp_mode)
+                hotkey_row(
+                    ui,
+                    HotkeySlot::Esp.ui_id(),
+                    HotkeySlot::Esp.label(),
+                    &mut p.esp_hotkey,
+                    &mut p.esp_mode,
+                )
             };
             if changed {
                 self.send_config();
@@ -139,7 +145,7 @@ impl App {
     }
 
     fn player_right(&mut self, ui: &mut Ui) {
-        ui.collapsing("Sound ESP", |ui| {
+        card(ui, "Sound ESP", |ui| {
             if checkbox_hover(
                 ui,
                 "Enabled",
@@ -167,7 +173,7 @@ impl App {
                 self.send_config();
             }
 
-            ui.collapsing("Ranges", |ui| {
+            card(ui, "Ranges", |ui| {
                 ui.horizontal(|ui| {
                     let response = ui.add(
                         egui::DragValue::new(&mut self.config.player.sound.footstep_diameter)

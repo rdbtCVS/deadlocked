@@ -2,22 +2,18 @@ use std::cell::RefCell;
 
 use egui::emath::GuiRounding as _;
 use egui::{
-    pos2, Align2, Color32, CornerRadius, CursorIcon, FontId, Frame, Id, Pos2, Rect, Sense, Stroke,
-    StrokeKind, Vec2,
+    Align2, Color32, CornerRadius, CursorIcon, FontId, Frame, Id, Pos2, Rect, Sense, Stroke,
+    StrokeKind, Vec2, pos2,
 };
 
 use crate::{
     config::{BoxFill, BoxMode, DrawMode, EspElementLayout, EspZone},
-    cs2::{
-        bones::Bones,
-        entity::weapon::Weapon,
-    },
+    cs2::{bones::Bones, entity::weapon::Weapon},
     ui::{
         app::App,
         esp_hud::{
-            esp_hud_build_cmds, esp_union_interactive_rects, paint_cmds, preview_snap_band_rect,
-            snap_esp_zone_preview, EspBoxGeom, EspHudInteractive, EspHudSample,
-            ESP_INTERACTIVE_ALL,
+            ESP_INTERACTIVE_ALL, EspBoxGeom, EspHudInteractive, EspHudSample, esp_hud_build_cmds,
+            esp_union_interactive_rects, paint_cmds, preview_snap_band_rect, snap_esp_zone_preview,
         },
     },
 };
@@ -137,7 +133,11 @@ fn paint_preview_box_fill(
                 let y0 = rect.top() + slice_h * i as f32;
                 let y1 = (y0 + slice_h).min(rect.bottom());
                 let slice = Rect::from_min_max(pos2(rect.left(), y0), pos2(rect.right(), y1));
-                painter.rect_filled(slice, CornerRadius::ZERO, preview_lerp_color(top_c, bot_c, t));
+                painter.rect_filled(
+                    slice,
+                    CornerRadius::ZERO,
+                    preview_lerp_color(top_c, bot_c, t),
+                );
             }
         }
     }
@@ -158,18 +158,8 @@ fn paint_preview_3d_box(
         paint_preview_box_fill(painter, front, fill, fill_alpha, base_color);
     }
 
-    painter.rect_stroke(
-        front,
-        CornerRadius::ZERO,
-        stroke,
-        StrokeKind::Inside,
-    );
-    painter.rect_stroke(
-        back,
-        CornerRadius::ZERO,
-        stroke,
-        StrokeKind::Inside,
-    );
+    painter.rect_stroke(front, CornerRadius::ZERO, stroke, StrokeKind::Inside);
+    painter.rect_stroke(back, CornerRadius::ZERO, stroke, StrokeKind::Inside);
 
     painter.line_segment([front.left_top(), back.left_top()], stroke);
     painter.line_segment([front.right_top(), back.right_top()], stroke);
@@ -204,14 +194,7 @@ fn paint_preview_player_box(
 
     match player.box_mode {
         BoxMode::ThreeD => {
-            paint_preview_3d_box(
-                painter,
-                rect_2d,
-                stroke,
-                player.box_fill,
-                fill_alpha,
-                rgb,
-            );
+            paint_preview_3d_box(painter, rect_2d, stroke, player.box_fill, fill_alpha, rgb);
         }
         BoxMode::Full => {
             if player.box_fill != BoxFill::None {
@@ -272,10 +255,7 @@ fn paint_preview_skeleton(
     let neck = preview_bone_pos(Bones::Neck, geo);
     let spine3 = preview_bone_pos(Bones::Spine3, geo);
     let height = spine3.y - neck.y;
-    let pos = pos2(
-        neck.x - (spine3.x - neck.x) * 0.5,
-        neck.y - height * 0.5,
-    );
+    let pos = pos2(neck.x - (spine3.x - neck.x) * 0.5, neck.y - height * 0.5);
     painter.circle_stroke(pos, height.abs() * 0.5, stroke);
 }
 

@@ -2,7 +2,7 @@ use egui::{DragValue, Ui};
 
 use crate::ui::{
     app::App,
-    gui::helpers::{checkbox, collapsing_open, color_picker, drag, scroll},
+    gui::helpers::{card, checkbox, collapsing_open, color_picker, drag, scroll},
 };
 
 impl App {
@@ -29,7 +29,7 @@ impl App {
                 }
             });
 
-            ui.collapsing("Grenade Trails", |ui| {
+            card(ui, "Grenade Trails", |ui| {
                 if checkbox(
                     ui,
                     "Enable Grenade Trails",
@@ -130,7 +130,7 @@ impl App {
             }
         });
 
-        ui.collapsing("Sniper Crosshair", |ui| {
+        card(ui, "Sniper Crosshair", |ui| {
             if checkbox(ui, "Enabled", &mut self.config.hud.sniper_crosshair.enabled) {
                 self.send_config();
             }
@@ -210,7 +210,7 @@ impl App {
             }
         });
 
-        ui.collapsing("Advanced", |ui| {
+        card(ui, "Advanced", |ui| {
             if checkbox(ui, "Debug Overlay", &mut self.config.hud.debug) {
                 self.send_config();
             }

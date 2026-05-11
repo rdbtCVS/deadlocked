@@ -1,9 +1,16 @@
-use egui::{Align, Ui};
+use egui::{Align, Button, CornerRadius, Frame, Margin, RichText, Sense, Stroke, Ui, Vec2};
 
 use crate::{
     config::{WeaponConfig, write_config},
     message::{GameMessage, GameStatus},
-    ui::{app::App, color::Colors, gui::aimbot::AimbotTab},
+    ui::{
+        app::App,
+        color::Colors,
+        gui::{
+            aimbot::AimbotTab,
+            helpers::{category_header, sidebar_item},
+        },
+    },
 };
 
 mod about;
@@ -17,7 +24,7 @@ mod hud;
 mod player;
 mod r#unsafe;
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Tab {
     Aimbot,
     Player,
@@ -46,50 +53,81 @@ impl App {
 
     fn gui(&mut self, ui: &mut Ui) {
         ui.ctx().set_pixels_per_point(self.display_scale);
-        egui::Panel::left("sidebar")
-            .resizable(false)
+        egui::CentralPanel::default()
+            .frame(
+                Frame::new()
+                    .fill(Colors::BG)
+                    .corner_radius(CornerRadius::same(12))
+                    .inner_margin(Margin::same(0))
+                    .stroke(Stroke::NONE),
+            )
             .show_inside(ui, |ui| {
-                ui.selectable_value(&mut self.current_tab, Tab::Aimbot, "\u{f04fe} Aimbot");
-                ui.selectable_value(&mut self.current_tab, Tab::Player, "\u{f0013} Player");
-                ui.selectable_value(&mut self.current_tab, Tab::Hud, "\u{f0379} Hud");
-                ui.selectable_value(&mut self.current_tab, Tab::Grenades, "\u{f0691} Grenades");
-                ui.selectable_value(&mut self.current_tab, Tab::Unsafe, "\u{f0ce6} Unsafe");
-                ui.selectable_value(&mut self.current_tab, Tab::Config, "\u{f168b} Config");
-                ui.selectable_value(
-                    &mut self.current_tab,
-                    Tab::Application,
-                    "\u{f1577} Application",
-                );
+                self.title_bar(ui);
 
-                ui.with_layout(egui::Layout::bottom_up(Align::Min), |ui| {
-                    if ui.button("Report Issue").clicked() {
-                        let _ = std::process::Command::new("xdg-open")
-                            .arg("https://github.com/avitran0/deadlocked/issues")
-                            .status();
-                    }
+                egui::Panel::left("sidebar")
+                    .frame(
+                        Frame::side_top_panel(ui.style())
+                            .fill(Colors::PANEL_ALT)
+                            .inner_margin(Margin::same(14)),
+                    )
+                    .resizable(false)
+                    .show_inside(ui, |ui| {
+                        let groups: &[(&str, &[(Tab, &str, &str)])] = &[
+                            ("COMBAT", &[(Tab::Aimbot, "\u{f04fe}", "Aimbot")]),
+                            (
+                                "VISUALS",
+                                &[
+                                    (Tab::Player, "\u{f0013}", "Player"),
+                                    (Tab::Hud, "\u{f0379}", "Hud"),
+                                ],
+                            ),
+                            (
+                                "MISC",
+                                &[
+                                    (Tab::Grenades, "\u{f0691}", "Grenades"),
+                                    (Tab::Unsafe, "\u{f0ce6}", "Unsafe"),
+                                ],
+                            ),
+                            (
+                                "SETTINGS",
+                                &[
+                                    (Tab::Config, "\u{f168b}", "Config"),
+                                    (Tab::Application, "\u{f1577}", "Application"),
+                                ],
+                            ),
+                        ];
 
-                    if ui.button("About").clicked() {
-                        self.show_about = true;
-                    }
+                        for (index, (section, items)) in groups.iter().enumerate() {
+                            if index > 0 {
+                                ui.add_space(12.0);
+                            }
+                            category_header(ui, section);
+                            ui.add_space(4.0);
+                            for (tab, icon, label) in *items {
+                                sidebar_item(ui, &mut self.current_tab, *tab, icon, label);
+                            }
+                        }
 
-                    ui.label(egui::RichText::new(format!("{}", self.game_status)).color(
-                        match self.game_status {
-                            GameStatus::Working => Colors::GREEN,
-                            GameStatus::NotStarted => Colors::YELLOW,
-                        },
-                    ));
+                        ui.with_layout(egui::Layout::bottom_up(Align::Min), |ui| {
+                            ui.label(egui::RichText::new(format!("{}", self.game_status)).color(
+                                match self.game_status {
+                                    GameStatus::Working => Colors::GREEN,
+                                    GameStatus::NotStarted => Colors::YELLOW,
+                                },
+                            ));
+                        });
+                    });
+
+                egui::CentralPanel::default().show_inside(ui, |ui| match self.current_tab {
+                    Tab::Aimbot => self.aimbot_settings(ui),
+                    Tab::Player => self.player_settings(ui),
+                    Tab::Hud => self.hud_settings(ui),
+                    Tab::Grenades => self.grenade_settings(ui),
+                    Tab::Unsafe => self.unsafe_settings(ui),
+                    Tab::Config => self.config_settings(ui),
+                    Tab::Application => self.application_settings(ui),
                 });
             });
-
-        egui::CentralPanel::default().show_inside(ui, |ui| match self.current_tab {
-            Tab::Aimbot => self.aimbot_settings(ui),
-            Tab::Player => self.player_settings(ui),
-            Tab::Hud => self.hud_settings(ui),
-            Tab::Grenades => self.grenade_settings(ui),
-            Tab::Unsafe => self.unsafe_settings(ui),
-            Tab::Config => self.config_settings(ui),
-            Tab::Application => self.application_settings(ui),
-        });
 
         if self.show_about {
             self.about(ui.ctx());
@@ -98,6 +136,44 @@ impl App {
         if self.app_config.first_launch {
             self.stacktrace_popup(ui.ctx());
         }
+    }
+
+    fn title_bar(&mut self, ui: &mut Ui) {
+        egui::Panel::top("titlebar")
+            .exact_size(30.0)
+            .frame(
+                Frame::side_top_panel(ui.style())
+                    .fill(Colors::PANEL_ALT)
+                    .inner_margin(Margin::same(4)),
+            )
+            .show_inside(ui, |ui| {
+                ui.horizontal(|ui| {
+                    let button_size = Vec2::new(20.0, 20.0);
+                    let close_width = button_size.x + ui.spacing().item_spacing.x;
+                    let drag_width = (ui.available_width() - close_width).max(0.0);
+                    let (rect, response) = ui.allocate_exact_size(
+                        Vec2::new(drag_width, button_size.y),
+                        Sense::click_and_drag(),
+                    );
+
+                    ui.painter().text(
+                        rect.center(),
+                        egui::Align2::CENTER_CENTER,
+                        "deadlocked",
+                        egui::FontId::proportional(13.0),
+                        Colors::TEXT,
+                    );
+
+                    if response.drag_started() {
+                        self.drag_window_requested = true;
+                    }
+
+                    let close = Button::new(RichText::new("x").color(Colors::SUBTEXT)).frame(false);
+                    if ui.add_sized(button_size, close).clicked() {
+                        self.close_requested = true;
+                    }
+                });
+            });
     }
 
     fn weapon_config(&mut self) -> &mut WeaponConfig {
@@ -122,6 +198,14 @@ impl App {
             return;
         }
         gui.run(|ui| (unsafe { &mut *self_ptr }).gui(ui));
+        let app = unsafe { &mut *self_ptr };
+        if app.drag_window_requested {
+            app.drag_window_requested = false;
+            gui.drag_window();
+        }
+        if app.close_requested {
+            std::process::exit(0);
+        }
         gui.clear();
         gui.paint();
 

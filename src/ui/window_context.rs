@@ -1,6 +1,9 @@
 use std::{num::NonZeroU32, sync::Arc};
 
-use egui::{Color32, FontData, FontDefinitions, Stroke, Style};
+use egui::{
+    Color32, CornerRadius, FontData, FontDefinitions, FontId, Margin, Stroke, Style, TextStyle,
+    Vec2,
+};
 use egui_glow::glow::{self, HasContext as _};
 use glutin::prelude::PossiblyCurrentGlContext;
 use winit::platform::x11::{WindowAttributesExtX11, WindowType};
@@ -42,7 +45,9 @@ impl WindowContext {
                 .with_title("deadlocked_overlay")
         } else {
             winit::window::WindowAttributes::default()
-                .with_inner_size(winit::dpi::LogicalSize::new(750, 450))
+                .with_decorations(false)
+                .with_inner_size(winit::dpi::LogicalSize::new(860, 526))
+                .with_transparent(true)
                 .with_title("deadlocked")
         };
 
@@ -53,7 +58,7 @@ impl WindowContext {
         } else {
             glutin::config::ConfigTemplateBuilder::new()
                 .prefer_hardware_accelerated(Some(true))
-                .with_transparency(false)
+                .with_transparency(true)
         };
 
         let (mut window, gl_config) =
@@ -140,11 +145,7 @@ impl WindowContext {
         let mut egui_glow = egui_glow::EguiGlow::new(event_loop, glow.clone(), None, None, true);
         prep_ctx(&mut egui_glow.egui_ctx, accent_color);
 
-        let clear_color = if overlay {
-            Color32::TRANSPARENT
-        } else {
-            Color32::BLACK
-        };
+        let clear_color = Color32::TRANSPARENT;
 
         Self {
             window,
@@ -159,6 +160,10 @@ impl WindowContext {
 
     pub fn window(&self) -> &winit::window::Window {
         &self.window
+    }
+
+    pub fn drag_window(&self) {
+        let _ = self.window.drag_window();
     }
 
     pub fn resize(&self, physical_size: winit::dpi::PhysicalSize<u32>) {
@@ -255,42 +260,81 @@ fn prep_ctx(ctx: &mut egui::Context, accent_color: egui::Color32) {
 
 fn gui_style(style: &mut Style, accent_color: egui::Color32) {
     style.interaction.selectable_labels = false;
-    for font in style.text_styles.iter_mut() {
-        font.1.size = 16.0;
-    }
-    //style.visuals.override_text_color = Some(Color32::WHITE);
+    style.text_styles.insert(
+        TextStyle::Small,
+        FontId::new(11.0, egui::FontFamily::Proportional),
+    );
+    style.text_styles.insert(
+        TextStyle::Body,
+        FontId::new(13.0, egui::FontFamily::Proportional),
+    );
+    style.text_styles.insert(
+        TextStyle::Button,
+        FontId::new(13.0, egui::FontFamily::Proportional),
+    );
+    style.text_styles.insert(
+        TextStyle::Heading,
+        FontId::new(11.0, egui::FontFamily::Proportional),
+    );
+    style.text_styles.insert(
+        TextStyle::Monospace,
+        FontId::new(13.0, egui::FontFamily::Monospace),
+    );
 
-    style.visuals.window_fill = Colors::BASE;
-    style.visuals.panel_fill = Colors::BASE;
-    style.visuals.extreme_bg_color = Colors::BACKDROP;
+    style.spacing.item_spacing = Vec2::new(10.0, 8.0);
+    style.spacing.button_padding = Vec2::new(10.0, 6.0);
+    style.spacing.window_margin = Margin::same(12);
+    style.spacing.menu_margin = Margin::same(12);
 
-    let bg_stroke = Stroke::new(1.0, Colors::SUBTEXT);
+    style.visuals.override_text_color = Some(Colors::TEXT);
+    style.visuals.weak_text_color = Some(Colors::SUBTEXT);
+    style.visuals.window_fill = Colors::BG;
+    style.visuals.panel_fill = Colors::BG;
+    style.visuals.extreme_bg_color = Colors::INPUT;
+    style.visuals.text_edit_bg_color = Some(Colors::INPUT);
+    style.visuals.code_bg_color = Colors::PANEL_ALT;
+    style.visuals.faint_bg_color = Colors::PANEL_ALT;
+    style.visuals.window_corner_radius = CornerRadius::same(12);
+    style.visuals.menu_corner_radius = CornerRadius::same(10);
+    style.visuals.window_stroke = Stroke::NONE;
+    style.visuals.indent_has_left_vline = false;
+    style.visuals.collapsing_header_frame = false;
+
     let fg_stroke = Stroke::new(1.0, Colors::TEXT);
-    let dark_stroke = Stroke::new(1.0, Colors::BASE);
+    let muted_stroke = Stroke::new(1.0, Colors::SUBTEXT);
+    let accent_stroke = Stroke::new(1.0, accent_color);
+    let widget_radius = CornerRadius::same(8);
 
     style.visuals.selection.bg_fill = accent_color;
-    style.visuals.selection.stroke = dark_stroke;
+    style.visuals.selection.stroke = Stroke::NONE;
 
-    style.visuals.widgets.active.bg_fill = Colors::HIGHLIGHT;
-    style.visuals.widgets.active.bg_stroke = bg_stroke;
+    style.visuals.widgets.active.bg_fill = accent_color;
+    style.visuals.widgets.active.bg_stroke = Stroke::NONE;
     style.visuals.widgets.active.fg_stroke = fg_stroke;
-    style.visuals.widgets.active.weak_bg_fill = Colors::HIGHLIGHT;
+    style.visuals.widgets.active.weak_bg_fill = accent_color;
+    style.visuals.widgets.active.corner_radius = widget_radius;
 
-    style.visuals.widgets.hovered.bg_fill = Colors::HIGHLIGHT;
-    style.visuals.widgets.hovered.bg_stroke = bg_stroke;
+    style.visuals.widgets.hovered.bg_fill = Colors::HOVER;
+    style.visuals.widgets.hovered.bg_stroke = Stroke::NONE;
     style.visuals.widgets.hovered.fg_stroke = fg_stroke;
-    style.visuals.widgets.hovered.weak_bg_fill = Colors::HIGHLIGHT;
+    style.visuals.widgets.hovered.weak_bg_fill = Colors::HOVER;
+    style.visuals.widgets.hovered.corner_radius = widget_radius;
 
-    style.visuals.widgets.inactive.bg_fill = Colors::HIGHLIGHT;
-    style.visuals.widgets.inactive.fg_stroke = fg_stroke;
-    style.visuals.widgets.inactive.weak_bg_fill = Colors::HIGHLIGHT;
+    style.visuals.widgets.inactive.bg_fill = Colors::INPUT;
+    style.visuals.widgets.inactive.bg_stroke = Stroke::NONE;
+    style.visuals.widgets.inactive.fg_stroke = muted_stroke;
+    style.visuals.widgets.inactive.weak_bg_fill = Colors::INPUT;
+    style.visuals.widgets.inactive.corner_radius = widget_radius;
 
-    style.visuals.widgets.noninteractive.bg_fill = Colors::HIGHLIGHT;
-    style.visuals.widgets.noninteractive.fg_stroke = fg_stroke;
-    style.visuals.widgets.noninteractive.weak_bg_fill = Colors::HIGHLIGHT;
+    style.visuals.widgets.noninteractive.bg_fill = Colors::PANEL;
+    style.visuals.widgets.noninteractive.bg_stroke = Stroke::NONE;
+    style.visuals.widgets.noninteractive.fg_stroke = muted_stroke;
+    style.visuals.widgets.noninteractive.weak_bg_fill = Colors::PANEL;
+    style.visuals.widgets.noninteractive.corner_radius = widget_radius;
 
-    style.visuals.widgets.open.bg_fill = Colors::HIGHLIGHT;
-    style.visuals.widgets.open.bg_stroke = bg_stroke;
+    style.visuals.widgets.open.bg_fill = Colors::HOVER;
+    style.visuals.widgets.open.bg_stroke = accent_stroke;
     style.visuals.widgets.open.fg_stroke = fg_stroke;
-    style.visuals.widgets.open.weak_bg_fill = Colors::HIGHLIGHT;
+    style.visuals.widgets.open.weak_bg_fill = Colors::HOVER;
+    style.visuals.widgets.open.corner_radius = widget_radius;
 }

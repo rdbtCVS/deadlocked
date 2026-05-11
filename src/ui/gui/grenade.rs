@@ -6,7 +6,7 @@ use crate::{
         app::App,
         color::Colors,
         grenades::{Grenade, write_grenades},
-        gui::helpers::{collapsing_open, scroll},
+        gui::helpers::{card, collapsing_open, scroll},
     },
 };
 
@@ -20,7 +20,7 @@ impl App {
             }
 
             // grenade list
-            ui.collapsing("Grenade List", |ui| {
+            card(ui, "Grenade List", |ui| {
                 self.grenade_list(ui);
             });
         });
@@ -32,7 +32,7 @@ impl App {
         for (map, grenades) in self.grenades.iter_mut() {
             let mut delete_grenade_index = None;
 
-            ui.collapsing(map, |ui| {
+            card(ui, map, |ui| {
                 for (index, grenade) in grenades.iter().enumerate() {
                     let active = match &self.current_grenade {
                         Some(grenade) => &grenade.0 == map && grenade.1 == index,
