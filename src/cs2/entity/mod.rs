@@ -70,6 +70,7 @@ impl GrenadeInfo {
 impl CS2 {
     pub fn cache_entities(&mut self) {
         self.players.clear();
+        self.dead_players.clear();
         self.entities.clear();
         self.planted_c4 = None;
         self.vote_controller_entity = None;
@@ -134,6 +135,7 @@ impl CS2 {
                     };
 
                     if !player.is_valid(self) {
+                        self.dead_players.push(player);
                         continue;
                     }
 
