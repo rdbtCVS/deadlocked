@@ -132,10 +132,6 @@ impl App {
         if self.show_about {
             self.about(ui.ctx());
         }
-
-        if self.app_config.first_launch {
-            self.stacktrace_popup(ui.ctx());
-        }
     }
 
     fn title_bar(&mut self, ui: &mut Ui) {

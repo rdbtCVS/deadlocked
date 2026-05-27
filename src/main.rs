@@ -2,12 +2,7 @@ use std::sync::Arc;
 
 use utils::{channel::Channel, log::LoggerOptions, sync::Mutex};
 
-use crate::{
-    config::BASE_PATH,
-    data::Data,
-    os::{crash::install_crash_handler, mouse::check_uinput},
-    ui::app::App,
-};
+use crate::{config::BASE_PATH, data::Data, os::mouse::check_uinput, ui::app::App};
 
 mod config;
 mod constants;
@@ -43,8 +38,6 @@ fn main() {
         return;
     }
 
-    install_crash_handler();
-
     // this runs as x11 for now, because wayland decorations for winit are not good
     // and don't support disabling the maximize button
     unsafe { std::env::remove_var("WAYLAND_DISPLAY") };
@@ -54,7 +47,6 @@ fn main() {
     let data_game = data.clone();
 
     std::thread::spawn(move || {
-        install_crash_handler();
         game::GameManager::new(channel_game, data_game).run();
     });
 

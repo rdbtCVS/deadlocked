@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     path::PathBuf,
-    sync::{Arc, atomic::Ordering},
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -20,7 +20,6 @@ use crate::{
     cs2::entity::weapon::Weapon,
     data::{Data, SoundType},
     message::{GameMessage, GameStatus, UiMessage},
-    os::crash::STACKTRACE_SENT,
     ui::{
         grenades::{Grenade, GrenadeList, read_grenades},
         gui::{Tab, aimbot::AimbotTab},
@@ -49,6 +48,7 @@ pub struct App {
     pub new_grenade: Grenade,
     pub current_grenade: Option<(String, usize)>,
 
+    #[allow(dead_code)]
     pub app_config: ApplicationConfig,
     pub config: Config,
     pub current_config: PathBuf,
@@ -82,11 +82,6 @@ impl App {
             }
             Err(_) => (None, None),
         };
-
-        // was selected to be no,
-        if !app_config.first_launch && !app_config.send_stacktraces {
-            STACKTRACE_SENT.store(true, Ordering::Relaxed);
-        }
 
         let ret = Self {
             gui: None,
