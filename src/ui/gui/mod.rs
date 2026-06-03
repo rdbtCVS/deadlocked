@@ -1,4 +1,5 @@
 use egui::{Align, Button, CornerRadius, Frame, Margin, RichText, Sense, Stroke, Ui, Vec2};
+use std::time::Duration;
 
 use crate::{
     config::{WeaponConfig, write_config},
@@ -37,7 +38,10 @@ pub enum Tab {
 
 impl App {
     pub fn send_config(&self) {
-        self.send_message(GameMessage(Box::new(self.config.clone())));
+        self.send_message(GameMessage {
+            config: Box::new(self.config.clone()),
+            grenades: Box::new(self.grenades.clone()),
+        });
         self.save();
     }
 
@@ -115,6 +119,16 @@ impl App {
                                     GameStatus::NotStarted => Colors::YELLOW,
                                 },
                             ));
+
+                            let frame_avg = if self.frame_times.is_empty() {
+                                0.0f32
+                            } else {
+                                let frame_sum =
+                                    self.frame_times.iter().sum::<Duration>().as_secs_f32()
+                                        * 1000.0;
+                                frame_sum / self.frame_times.len() as f32
+                            };
+                            ui.label(format!("{frame_avg:.1} ms"));
                         });
                     });
 

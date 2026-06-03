@@ -259,6 +259,23 @@ pub fn hotkey_row(
     changed
 }
 
+pub fn keybind(ui: &mut Ui, id_base: &str, name: &str, key: &mut KeyCode) -> bool {
+    let mut key_opt = (*key != KeyCode::None).then_some(*key);
+    let changed = ui
+        .horizontal(|ui| {
+            let changed = ui.add(KeybindOpt::new(&mut key_opt, id_base)).changed();
+            ui.label(name);
+            changed
+        })
+        .inner;
+
+    if changed {
+        *key = key_opt.unwrap_or(KeyCode::None);
+    }
+
+    changed
+}
+
 pub struct KeybindOpt<'gui> {
     keycode: &'gui mut Option<KeyCode>,
     id: egui::Id,

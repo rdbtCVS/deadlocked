@@ -12,12 +12,14 @@ use crate::{
     data::Data,
     message::{GameMessage, GameStatus, UiMessage},
     os::mouse::Mouse,
+    ui::grenades::GrenadeList,
 };
 
 pub struct GameManager {
     channel: Channel<UiMessage, GameMessage>,
     data: Arc<Mutex<Data>>,
     config: Config,
+    grenades: GrenadeList,
     mouse: Mouse,
     cs2: CS2,
 }
@@ -37,6 +39,7 @@ impl GameManager {
             channel,
             data,
             config: Config::default(),
+            grenades: GrenadeList::default(),
             mouse,
             cs2: CS2::new(),
         }
@@ -49,18 +52,19 @@ impl GameManager {
     }
 
     pub fn run(&mut self) {
-        self.send_message(UiMessage(GameStatus::NotStarted));
+        self.send_message(UiMessage::Status(GameStatus::NotStarted));
         let mut previous_status = GameStatus::NotStarted;
         loop {
             let start = Instant::now();
             while let Ok(message) = self.channel.try_receive() {
-                self.config = *message.0;
+                self.config = *message.config;
+                self.grenades = *message.grenades;
             }
 
             let mut is_valid = self.cs2.is_valid();
             if !is_valid {
                 if previous_status == GameStatus::Working {
-                    self.send_message(UiMessage(GameStatus::NotStarted));
+                    self.send_message(UiMessage::Status(GameStatus::NotStarted));
                     previous_status = GameStatus::NotStarted;
                 }
                 self.cs2.setup();
@@ -69,10 +73,10 @@ impl GameManager {
 
             if is_valid {
                 if previous_status == GameStatus::NotStarted {
-                    self.send_message(UiMessage(GameStatus::Working));
+                    self.send_message(UiMessage::Status(GameStatus::Working));
                     previous_status = GameStatus::Working;
                 }
-                self.cs2.run(&self.config, &mut self.mouse);
+                self.cs2.run(&self.config, &self.grenades, &mut self.mouse);
                 let mut data = self.data.lock();
                 self.cs2.data(&self.config, &mut data);
             } else {
@@ -90,6 +94,7 @@ impl GameManager {
                         self.loop_duration().as_millis()
                     );
                 }
+                self.send_message(UiMessage::FrameTime(elapsed));
             } else {
                 sleep(SLEEP_DURATION);
             }
