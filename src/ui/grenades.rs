@@ -88,13 +88,15 @@ impl GrenadeAutomation {
             || compact.contains("rmblmb")
             || compact.contains("leftright")
             || compact.contains("rightleft")
+            || compact.contains("m1m2")
+            || compact.contains("m2m1")
             || compact.contains("mouse1mouse2")
             || compact.contains("mouse2mouse1")
             || self.throw_strength < 0.75
         {
             return ThrowButtons::Both;
         }
-        if description.contains("rmb") {
+        if description.contains("rmb") || compact.contains("m2") || compact.contains("mouse2") {
             return ThrowButtons::Right;
         }
         ThrowButtons::Left

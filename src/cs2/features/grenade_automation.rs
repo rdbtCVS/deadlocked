@@ -69,6 +69,7 @@ impl CS2 {
             };
             let view_angles = local_player.view_angles(self);
             let position = local_player.position(self);
+            let velocity = local_player.velocity(self);
             let sensitivity = self.get_sensitivity() * local_player.fov_multiplier(self);
             let grenade_config = config.grenade.clone();
             let blocked_keys = self
@@ -81,8 +82,14 @@ impl CS2 {
                 .clear_game_keys(&self.process, &self.offsets, &blocked_keys);
             let active = self.grenade_automation.active.as_mut().unwrap();
             active.reassert_inputs(mouse);
-            let finished =
-                active.update(mouse, position, view_angles, sensitivity, &grenade_config);
+            let finished = active.update(
+                mouse,
+                position,
+                velocity,
+                view_angles,
+                sensitivity,
+                &grenade_config,
+            );
             if finished {
                 self.grenade_automation.active = None;
             }
@@ -139,10 +146,11 @@ impl CS2 {
 impl ActiveGrenadeAutomation {
     fn new(grenade: &Grenade) -> Self {
         let throw_movement_keys = movement_keys(grenade);
-        let buttons = grenade.automation.throw_buttons(&grenade.description);
+        let grenade_text = grenade_text(grenade);
+        let buttons = grenade.automation.throw_buttons(&grenade_text);
         let should_jump = grenade.modifiers.jump
             || grenade.automation.movement_flags & 4 != 0
-            || grenade.description.to_ascii_lowercase().contains("jump");
+            || has_jump_hint(&grenade_text);
 
         Self {
             target_position: grenade.position,
@@ -230,6 +238,7 @@ impl ActiveGrenadeAutomation {
         &mut self,
         mouse: &mut Mouse,
         position: Vec3,
+        velocity: Vec3,
         view_angles: Vec2,
         sensitivity: f32,
         config: &crate::config::GrenadeConfig,
@@ -276,6 +285,11 @@ impl ActiveGrenadeAutomation {
                 return false;
             }
             self.aimed = true;
+        }
+
+        if flat_speed(velocity) > config.velocity_minimum.max(0.0) {
+            self.release_position_keys(mouse);
+            return false;
         }
 
         if !self.throw_pressed {
@@ -528,13 +542,13 @@ fn movement_keys_to_position(
 
 fn movement_keys(grenade: &Grenade) -> Vec<InputKey> {
     let mut keys = Vec::with_capacity(5);
-    let description = grenade.description.to_ascii_lowercase();
+    let text = grenade_text(grenade);
     let flags = grenade.automation.movement_flags;
 
-    if grenade.modifiers.duck || flags & 1 != 0 || description.contains("crouch") {
+    if grenade.modifiers.duck || flags & 1 != 0 || has_duck_hint(&text) {
         keys.push(InputKey::Ctrl);
     }
-    if flags & 8 != 0 || description.contains("walk") {
+    if flags & 8 != 0 || has_walk_hint(&text) {
         keys.push(InputKey::Shift);
     }
 
@@ -543,15 +557,65 @@ fn movement_keys(grenade: &Grenade) -> Vec<InputKey> {
         || flags & 2 != 0
         || flags & 16 != 0
         || flags & 512 != 0
-        || description.contains("w+")
-        || description.contains("run")
-        || description.contains("walk")
-        || description.contains("step");
+        || has_forward_hint(&text)
+        || has_run_hint(&text)
+        || has_walk_hint(&text)
+        || has_step_hint(&text);
     if forward {
         keys.push(InputKey::W);
     }
 
     keys
+}
+
+fn flat_speed(velocity: Vec3) -> f32 {
+    velocity.truncate().length()
+}
+
+fn grenade_text(grenade: &Grenade) -> String {
+    format!("{} {}", grenade.name, grenade.description).to_ascii_lowercase()
+}
+
+fn compact_text(text: &str) -> String {
+    text.chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .collect()
+}
+
+fn has_duck_hint(text: &str) -> bool {
+    let compact = compact_text(text);
+    text.contains("duck") || text.contains("crouch") || compact.contains("crouch")
+}
+
+fn has_walk_hint(text: &str) -> bool {
+    let compact = compact_text(text);
+    text.contains("walk") || compact.contains("walk")
+}
+
+fn has_run_hint(text: &str) -> bool {
+    let compact = compact_text(text);
+    text.contains("run") || compact.contains("runthrow")
+}
+
+fn has_step_hint(text: &str) -> bool {
+    let compact = compact_text(text);
+    text.contains("step") || compact.contains("stepjump")
+}
+
+fn has_jump_hint(text: &str) -> bool {
+    let compact = compact_text(text);
+    text.contains("jump") || compact.contains("jumpthrow")
+}
+
+fn has_forward_hint(text: &str) -> bool {
+    let compact = compact_text(text);
+    text.contains("w+")
+        || text.contains("+w")
+        || text.contains(" w ")
+        || text.contains("(w")
+        || text.contains("w)")
+        || compact.contains("wjump")
+        || compact.contains("wthrow")
 }
 
 fn key_code(key: InputKey) -> KeyCode {
@@ -659,6 +723,30 @@ mod tests {
         let keys = movement_keys(&grenade("Walk+Jump+Throw", 526, Default::default()));
 
         assert_eq!(keys, vec![InputKey::Shift, InputKey::W]);
+    }
+
+    #[test]
+    fn name_hints_drive_legacy_grenade_automation() {
+        let mut grenade = grenade("", 0, GrenadeModifiers::default());
+        grenade.name = "Elevator (Crouch+Step+Jump)".to_string();
+
+        let active = ActiveGrenadeAutomation::new(&grenade);
+        let keys = movement_keys(&grenade);
+
+        assert!(active.should_jump);
+        assert_eq!(keys, vec![InputKey::Ctrl, InputKey::W]);
+    }
+
+    #[test]
+    fn compact_name_hints_drive_forward_jumpthrow() {
+        let mut grenade = grenade("", 0, GrenadeModifiers::default());
+        grenade.name = "bottom mid (w+jumpthrow)".to_string();
+
+        let active = ActiveGrenadeAutomation::new(&grenade);
+        let keys = movement_keys(&grenade);
+
+        assert!(active.should_jump);
+        assert_eq!(keys, vec![InputKey::W]);
     }
 
     #[test]

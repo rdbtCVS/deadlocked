@@ -74,6 +74,15 @@ impl App {
             }
             if drag(
                 ui,
+                "Velocity Minimum",
+                DragValue::new(&mut self.config.grenade.velocity_minimum)
+                    .range(0.0..=100.0)
+                    .speed(0.5),
+            ) {
+                self.send_config();
+            }
+            if drag(
+                ui,
                 "Aim FOV",
                 DragValue::new(&mut self.config.grenade.aim_fov)
                     .range(1.0..=180.0)
