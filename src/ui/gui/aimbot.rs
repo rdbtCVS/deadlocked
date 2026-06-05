@@ -315,7 +315,7 @@ impl App {
 
             if drag(
                 ui,
-                "Extra Hold (us)",
+                "Extra Hold (μs)",
                 DragValue::new(&mut self.weapon_config().triggerbot.extra_hold_us)
                     .range(0..=1_000_000)
                     .speed(1000.0),

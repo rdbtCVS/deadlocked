@@ -2,7 +2,7 @@ use egui::{Align, Button, CornerRadius, Frame, Margin, RichText, Sense, Stroke, 
 use std::time::Duration;
 
 use crate::{
-    config::{WeaponConfig, write_config},
+    config::{aim::WeaponConfig, write_config},
     message::{GameMessage, GameStatus},
     ui::{
         app::App,

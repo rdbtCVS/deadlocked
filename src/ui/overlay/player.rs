@@ -5,7 +5,7 @@ use epaint::Mesh;
 use glam::{Vec3, vec3};
 
 use crate::{
-    config::{BoxFill, BoxMode, DrawMode},
+    config::player::{BoxFill, BoxMode, DrawMode},
     constants::cs2::HAMMER_UNITS_PER_METER,
     cs2::bones::Bones,
     data::{Data, PlayerData, SoundType},

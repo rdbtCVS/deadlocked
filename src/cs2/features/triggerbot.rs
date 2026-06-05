@@ -7,7 +7,7 @@ use glam::{Mat4, Quat, Vec2, Vec3};
 use rand::{RngExt as _, rng};
 
 use crate::{
-    config::{Config, KeyMode, TriggerbotConfig},
+    config::{Config, aim::TriggerbotConfig},
     constants::cs2::{TEAM_CT, TEAM_T},
     cs2::{
         CS2,
@@ -157,16 +157,12 @@ impl CS2 {
             return;
         }
 
-        let trigger_held = match trigger_config.mode {
-            KeyMode::Hold => self.input.is_key_pressed(hotkey),
-            KeyMode::Toggle => {
-                if self.input.key_just_pressed(hotkey) {
-                    self.trigger.active = !self.trigger.active;
-                }
-                self.trigger.active
-            }
-        };
-
+        let trigger_held = Self::check_hotkey(
+            &self.input,
+            trigger_config.mode,
+            hotkey,
+            &mut self.trigger.active,
+        );
         if !trigger_held {
             self.trigger.reset_schedule();
             return;

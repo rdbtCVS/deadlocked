@@ -5,7 +5,7 @@ use egui::{Align2, Color32, Painter, Stroke, pos2};
 use strum::IntoEnumIterator as _;
 
 use crate::{
-    config::KeyMode,
+    config::aim::KeyMode,
     cs2::entity::weapon_class::WeaponClass,
     data::Data,
     hotkeys::{self, HotkeySlot},

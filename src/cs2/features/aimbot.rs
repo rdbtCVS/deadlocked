@@ -1,5 +1,5 @@
 use crate::{
-    config::{AimbotConfig, Config, KeyMode},
+    config::{Config, aim::AimbotConfig},
     cs2::{
         CS2,
         bones::Bones,
@@ -38,22 +38,9 @@ impl CS2 {
             return false;
         }
 
-        match config.mode {
-            KeyMode::Hold => {
-                if !self.input.is_key_pressed(hotkey) {
-                    self.aim.reset_path();
-                    return false;
-                }
-            }
-            KeyMode::Toggle => {
-                if self.input.key_just_pressed(hotkey) {
-                    self.aim.active = !self.aim.active;
-                }
-                if !self.aim.active {
-                    self.aim.reset_path();
-                    return false;
-                }
-            }
+        if !Self::check_hotkey(&self.input, config.mode, hotkey, &mut self.aim.active) {
+            self.aim.reset_path();
+            return false;
         }
 
         self.aim_at_target(&config, mouse, true)

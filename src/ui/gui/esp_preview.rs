@@ -7,7 +7,7 @@ use egui::{
 };
 
 use crate::{
-    config::{BoxFill, BoxMode, DrawMode, EspElementLayout, EspZone},
+    config::player::{BoxFill, BoxMode, DrawMode, EspElementLayout, EspZone, PlayerConfig},
     cs2::{bones::Bones, entity::weapon::Weapon},
     ui::{
         app::App,
@@ -53,7 +53,7 @@ fn preview_lerp_color(a: egui::Color32, b: egui::Color32, t: f32) -> egui::Color
     )
 }
 
-fn preview_box_stroke_rgb(player: &crate::config::PlayerConfig, health: i32) -> egui::Color32 {
+fn preview_box_stroke_rgb(player: &PlayerConfig, health: i32) -> egui::Color32 {
     match player.draw_box {
         DrawMode::None => egui::Color32::TRANSPARENT,
         DrawMode::Health => preview_health_color(health, player.box_visible_color.a()),
@@ -61,10 +61,7 @@ fn preview_box_stroke_rgb(player: &crate::config::PlayerConfig, health: i32) -> 
     }
 }
 
-fn preview_skeleton_stroke_rgb(
-    player: &crate::config::PlayerConfig,
-    health: i32,
-) -> Option<egui::Color32> {
+fn preview_skeleton_stroke_rgb(player: &PlayerConfig, health: i32) -> Option<egui::Color32> {
     match player.draw_skeleton {
         DrawMode::None => None,
         DrawMode::Health => Some(preview_health_color(health, player.skeleton_color.a())),

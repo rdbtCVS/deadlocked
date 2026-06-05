@@ -2,7 +2,7 @@ use egui::{Align2, Color32, Painter, Pos2, Stroke, Ui, pos2};
 use glam::{Vec3, vec3};
 
 use crate::{
-    config::AimbotConfig,
+    config::aim::AimbotConfig,
     cs2::entity::weapon::Weapon,
     data::Data,
     hotkeys,
@@ -49,7 +49,7 @@ impl App {
                 }
             }
 
-            if self.config.hud.dropped_weapons || self.config.hud.grenade_trails {
+            if self.config.hud.dropped_weapons || self.config.hud.grenade_trails.enabled {
                 for entity in &data.entities {
                     self.draw_entity(&painter, entity, data);
                 }

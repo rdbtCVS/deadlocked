@@ -2,7 +2,7 @@ use egui::{DragValue, Ui};
 use strum::IntoEnumIterator as _;
 
 use crate::{
-    config::BoxMode,
+    config::player::BoxMode,
     hotkeys::HotkeySlot,
     ui::{
         app::App,

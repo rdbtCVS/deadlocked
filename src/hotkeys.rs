@@ -1,7 +1,10 @@
 use strum::EnumIter;
 
 use crate::{
-    config::{AimConfig, AimbotConfig, Config, TriggerbotConfig},
+    config::{
+        Config,
+        aim::{AimConfig, AimbotConfig, TriggerbotConfig},
+    },
     cs2::{entity::weapon::Weapon, key_codes::KeyCode},
     data::Data,
 };
