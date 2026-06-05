@@ -350,7 +350,7 @@ impl<'gui> Widget for KeybindOpt<'gui> {
             });
 
             if let Some(assignment) = key_opt {
-                if assignment.map_or(true, |k| k != KeyCode::Escape) {
+                if assignment != Some(KeyCode::Escape) {
                     *self.keycode = assignment;
                     response.mark_changed();
                 }

@@ -252,8 +252,8 @@ impl CS2 {
             let active: i32 = self.process.read(entity + vo.active_issue);
             if active >= 0 {
                 let mut options = [0i32; 5];
-                for i in 0..5 {
-                    options[i] = self
+                for (i, option) in options.iter_mut().enumerate() {
+                    *option = self
                         .process
                         .read(entity + vo.vote_option_count + i as u64 * 4);
                 }

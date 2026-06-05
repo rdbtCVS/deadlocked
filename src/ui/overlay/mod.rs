@@ -310,14 +310,14 @@ impl App {
         if hit_pulse {
             self.last_hit_damage = data.hit_damage_delta;
             self.hit_marker_until = Some(Instant::now() + Duration::from_millis(420));
-            if self.config.hud.hit_sound {
-                if let Some(sink) = self.hit_sink.as_mut() {
-                    sink.stop();
-                    let wave = rodio::source::SineWave::new(920.0)
-                        .take_duration(Duration::from_millis(45))
-                        .amplify(0.09);
-                    sink.append(wave);
-                }
+            if self.config.hud.hit_sound
+                && let Some(sink) = self.hit_sink.as_mut()
+            {
+                sink.stop();
+                let wave = rodio::source::SineWave::new(920.0)
+                    .take_duration(Duration::from_millis(45))
+                    .amplify(0.09);
+                sink.append(wave);
             }
         }
     }

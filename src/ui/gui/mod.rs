@@ -36,6 +36,9 @@ pub enum Tab {
     Application,
 }
 
+type SidebarTab = (Tab, &'static str, &'static str);
+type SidebarGroup = (&'static str, &'static [SidebarTab]);
+
 impl App {
     pub fn send_config(&self) {
         self.send_message(GameMessage {
@@ -76,7 +79,7 @@ impl App {
                     )
                     .resizable(false)
                     .show_inside(ui, |ui| {
-                        let groups: &[(&str, &[(Tab, &str, &str)])] = &[
+                        let groups: &[SidebarGroup] = &[
                             ("COMBAT", &[(Tab::Aimbot, "\u{f04fe}", "Aimbot")]),
                             (
                                 "VISUALS",

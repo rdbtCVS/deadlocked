@@ -51,15 +51,9 @@ impl WindowContext {
                 .with_title("deadlocked")
         };
 
-        let config_template_builder = if overlay {
-            glutin::config::ConfigTemplateBuilder::new()
-                .prefer_hardware_accelerated(Some(true))
-                .with_transparency(true)
-        } else {
-            glutin::config::ConfigTemplateBuilder::new()
-                .prefer_hardware_accelerated(Some(true))
-                .with_transparency(true)
-        };
+        let config_template_builder = glutin::config::ConfigTemplateBuilder::new()
+            .prefer_hardware_accelerated(Some(true))
+            .with_transparency(true);
 
         let (mut window, gl_config) =
             glutin_winit::DisplayBuilder::new() // let glutin-winit helper crate handle the complex parts of opengl context creation
