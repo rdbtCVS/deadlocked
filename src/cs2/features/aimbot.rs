@@ -202,6 +202,8 @@ impl CS2 {
             },
         ));
 
+        self.recoil.previous = local_player.aim_punch(self);
+
         true
     }
 }
